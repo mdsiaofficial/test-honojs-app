@@ -1,19 +1,31 @@
 {
   "name": "test-honojs-app",
-  "module": "index.ts",
+  "module": "src/server.ts",
   "type": "module",
   "scripts": {
-    "dev": "bun run --hot index.ts",
-    "start": "bun run index.ts",
-    "build": "bun build --compile index.ts --outfile server"
+    "dev": "bun run --hot src/server.ts",
+    "start": "bun run src/server.ts",
+    "build": "bun build --compile src/server.ts --outfile server",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio",
+    "test": "bun test",
+    "docker:build": "docker build -t test-honojs-app .",
+    "docker:run": "docker run -p 3000:3000 --env-file .env --add-host=host.docker.internal:host-gateway test-honojs-app"
   },
   "devDependencies": {
-    "@types/bun": "^1.4.0"
+    "@types/bun": "^1.4.0",
+    "drizzle-kit": "^0.31.10"
   },
   "peerDependencies": {
     "typescript": "^7"
   },
   "dependencies": {
-    "hono": "^4.13.3"
+    "@hono/zod-validator": "^0.9.0",
+    "drizzle-orm": "^0.45.2",
+    "hono": "^4.13.3",
+    "postgres": "^3.4.9",
+    "zod": "^4.4.3"
   }
 }
