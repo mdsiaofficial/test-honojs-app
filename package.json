@@ -1,0 +1,19 @@
+{
+  "name": "test-honojs-app",
+  "module": "index.ts",
+  "type": "module",
+  "scripts": {
+    "dev": "bun run --hot index.ts",
+    "start": "bun run index.ts",
+    "build": "bun build --compile index.ts --outfile server"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.0"
+  },
+  "peerDependencies": {
+    "typescript": "^7"
+  },
+  "dependencies": {
+    "hono": "^4.13.3"
+  }
+}
