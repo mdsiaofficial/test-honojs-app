@@ -1,19 +1,19 @@
 import { Hono } from "hono";
-// import { authRoutes } from "./auth.routes";
-// import { userRoutes } from "./user.routes";
-// import { postRoutes } from "./post.routes";
 import { health_routes } from "./health.routes";
 import type { THonoEnv } from "../types/types";
 
 export const routes = new Hono<THonoEnv>();
 
 routes.get("/", (c) => {
+  console.log(c.req.url)
+  const { origin } = new URL(c.req.url);
+  console.log(origin);
   return c.json({
     name: "Bun + Hono + Drizzle API",
     version: "1.0.0",
     runtime: `Bun ${Bun.version}`,
     endpoints: {
-      health: "/health",
+      health: `${origin}/health`,
       // auth: {
       //   register: "POST /api/auth/register",
       //   login: "POST /api/auth/login",
@@ -37,6 +37,3 @@ routes.get("/", (c) => {
 });
 
 routes.route("/health", health_routes);
-// routes.route("/api/auth", authRoutes);
-// routes.route("/api/users", userRoutes);
-// routes.route("/api/posts", postRoutes);
