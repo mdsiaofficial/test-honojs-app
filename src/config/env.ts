@@ -10,7 +10,7 @@ const env_schema = z.object({
   ]),
   DATABASE_URL: z
     .string()
-    .default("postgres://postgres:postgres@localhost:5432/test_hono_db"),
+    .default("postgres://test_honojs_db:test_honojs_db@localhost:5432/test_honojs_db"),
   JWT_SECRET: z
     .string()
     .min(8)

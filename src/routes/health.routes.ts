@@ -1,10 +1,10 @@
 import { Hono } from "hono";
 
-export const healthRoutes = new Hono();
+export const health_routes = new Hono();
 
 const startTime = Date.now();
 
-healthRoutes.get("/", (c) => {
+health_routes.get("/", (c) => {
   return c.json({
     status: "ok",
     timestamp: new Date().toISOString(),

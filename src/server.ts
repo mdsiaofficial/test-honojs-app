@@ -3,10 +3,25 @@ import { env } from "./config/env";
 
 const app = new Hono();
 
-app.get(
-  "/",
-  
-)
+
+// app.get(
+//   "/",
+//   (c) => {
+//     const startTime = Date.now();
+
+//     return c.json({
+//       message: "Test honojs application is running",
+//       status: "ok",
+//       timestamp: new Date().toISOString(),
+//       uptime: `${Math.floor((Date.now() - startTime) / 1000)}s`,
+//       runtime: {
+//         name: "Bun",
+//         version: Bun.version,
+//       },
+//       environment: process.env.NODE_ENV || "development",
+//     });
+//   }
+// )
 
 const server = Bun.serve({
   port: env.PORT,

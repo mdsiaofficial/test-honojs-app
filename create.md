@@ -200,9 +200,9 @@ NODE_ENV=development
 
 # Database Configuration (PostgreSQL on local machine)
 # When running locally with Bun:
-DATABASE_URL=postgres://postgres:postgres@localhost:5432/test_hono_db
+DATABASE_URL=postgres://test_honojs_db:test_honojs_db@localhost:5432/test_honojs_db
 # When running in Docker connecting to host machine PostgreSQL:
-# DATABASE_URL=postgres://postgres:postgres@host.docker.internal:5432/test_hono_db
+# DATABASE_URL=postgres://test_honojs_db:test_honojs_db@host.docker.internal:5432/test_honojs_db
 
 # Authentication
 JWT_SECRET=super-secret-jwt-key-change-this-in-production
@@ -227,7 +227,7 @@ export default defineConfig({
   out: "./drizzle",
   dialect: "postgresql",
   dbCredentials: {
-    url: process.env.DATABASE_URL || "postgres://postgres:postgres@localhost:5432/test_hono_db",
+    url: process.env.DATABASE_URL || "postgres://test_honojs_db:test_honojs_db@localhost:5432/test_honojs_db",
   },
   verbose: true,
   strict: true,
@@ -360,7 +360,7 @@ const envSchema = z.object({
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   DATABASE_URL: z
     .string()
-    .default("postgres://postgres:postgres@localhost:5432/test_hono_db"),
+    .default("postgres://test_honojs_db:test_honojs_db@localhost:5432/test_honojs_db"),
   JWT_SECRET: z.string().min(8).default("default-development-jwt-secret-key-123456789"),
   JWT_EXPIRES_IN: z.string().default("7d"),
 });

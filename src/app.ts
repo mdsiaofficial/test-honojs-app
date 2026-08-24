@@ -4,6 +4,7 @@ import { logger } from "hono/logger";
 import { secureHeaders } from "hono/secure-headers";
 import { cors } from "hono/cors";
 import { trimTrailingSlash } from "hono/trailing-slash";
+import { routes } from "./routes/routes";
 
 
 export const app = new Hono<THonoEnv>();
@@ -24,7 +25,7 @@ export const app = new Hono<THonoEnv>();
   app.use("*", trimTrailingSlash());
 
   // Mount API routes
-  // app.route("/", routes);
+  app.route("/", routes);
 
   // 404 Not Found Handler
   // app.notFound(notFoundHandler);
