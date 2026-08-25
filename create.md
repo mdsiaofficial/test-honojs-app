@@ -7,54 +7,55 @@ This guide contains everything you need to build this entire production-ready Ty
 ## Table of Contents
 
 1. [Architecture Overview](#1-architecture-overview)
-2. [Prerequisites](#2-prerequisites)
-3. [Step 1: Project Initialization & Directory Setup](#step-1-project-initialization--directory-setup)
-4. [Step 2: Configuration Files](#step-2-configuration-files)
+2. [Naming Conventions Rule](#2-naming-conventions-rule)
+3. [Prerequisites](#3-prerequisites)
+4. [Step 1: Project Initialization & Directory Setup](#step-1-project-initialization--directory-setup)
+5. [Step 2: Configuration Files](#step-2-configuration-files)
    - [package.json](#packagejson)
    - [tsconfig.json](#tsconfigjson)
    - [.env.example & .env](#envexample--env)
    - [drizzle.config.ts](#drizzleconfigts)
    - [.dockerignore & Dockerfile](#dockerignore--dockerfile)
-5. [Step 3: Types Layer](#step-3-types-layer)
+6. [Step 3: Types Layer](#step-3-types-layer)
    - [src/types/index.ts](#srctypesindexts)
-6. [Step 4: Environment Config Parser](#step-4-environment-config-parser)
+7. [Step 4: Environment Config Parser](#step-4-environment-config-parser)
    - [src/config/env.ts](#srcconfigenvts)
-7. [Step 5: Database Connection & Drizzle Schemas](#step-5-database-connection--drizzle-schemas)
+8. [Step 5: Database Connection & Drizzle Schemas](#step-5-database-connection--drizzle-schemas)
    - [src/db/schema/users.ts](#srcdbschemausersts)
    - [src/db/schema/posts.ts](#srcdbschemapoststs)
    - [src/db/schema/index.ts](#srcdbschemaindexts)
    - [src/db/index.ts](#srcdbindexts)
-8. [Step 6: Repositories Layer (Data Access)](#step-6-repositories-layer-data-access)
+9. [Step 6: Repositories Layer (Data Access)](#step-6-repositories-layer-data-access)
    - [src/repositories/user.repository.ts](#srcrepositoriesuserrepositoryts)
    - [src/repositories/post.repository.ts](#srcrepositoriespostrepositoryts)
-9. [Step 7: Validation Layer (Zod)](#step-7-validation-layer-zod)
-   - [src/validators/auth.validator.ts](#srcvalidatorsauthvalidatorts)
-   - [src/validators/user.validator.ts](#srcvalidatorsuservalidatorts)
-   - [src/validators/post.validator.ts](#srcvalidatorspostvalidatorts)
-   - [src/validators/index.ts](#srcvalidatorsindexts)
-10. [Step 8: Middlewares & Error Handling](#step-8-middlewares--error-handling)
+10. [Step 7: Validation Layer (Zod)](#step-7-validation-layer-zod)
+    - [src/validators/auth.validator.ts](#srcvalidatorsauthvalidatorts)
+    - [src/validators/user.validator.ts](#srcvalidatorsuservalidatorts)
+    - [src/validators/post.validator.ts](#srcvalidatorspostvalidatorts)
+    - [src/validators/index.ts](#srcvalidatorsindexts)
+11. [Step 8: Middlewares & Error Handling](#step-8-middlewares--error-handling)
     - [src/middlewares/error.middleware.ts](#srcmiddlewareserrormiddlewarets)
     - [src/middlewares/auth.middleware.ts](#srcmiddlewaresauthmiddlewarets)
-11. [Step 9: Services Layer (Business Logic)](#step-9-services-layer-business-logic)
+12. [Step 9: Services Layer (Business Logic)](#step-9-services-layer-business-logic)
     - [src/services/auth.service.ts](#srcservicesauthservicets)
     - [src/services/user.service.ts](#srcservicesuserservicets)
     - [src/services/post.service.ts](#srcservicespostservicets)
-12. [Step 10: Routes Layer (Controllers / HTTP)](#step-10-routes-layer-controllers--http)
+13. [Step 10: Routes Layer (Controllers / HTTP)](#step-10-routes-layer-controllers--http)
     - [src/routes/health.routes.ts](#srcrouteshealthroutests)
     - [src/routes/auth.routes.ts](#srcroutesauthroutests)
     - [src/routes/user.routes.ts](#srcroutesuserroutests)
     - [src/routes/post.routes.ts](#srcroutespostroutests)
     - [src/routes/index.ts](#srcroutesindexts)
-13. [Step 11: App Factory & Server Bootstrap](#step-11-app-factory--server-bootstrap)
+14. [Step 11: App Factory & Server Bootstrap](#step-11-app-factory--server-bootstrap)
     - [src/app.ts](#srcappts)
     - [src/server.ts](#srcserverts)
-14. [Step 12: Automated Testing Suite](#step-12-automated-testing-suite)
+15. [Step 12: Automated Testing Suite](#step-12-automated-testing-suite)
     - [tests/health.test.ts](#testshealthtestts)
     - [tests/validators.test.ts](#testsvalidatorstestts)
     - [tests/services.test.ts](#testsservicestestts)
     - [tests/auth.test.ts](#testsauthtestts)
-15. [Step 13: Migrations, Running & Testing](#step-13-migrations-running--testing)
-16. [Step 14: API Reference & Testing with curl](#step-14-api-reference--testing-with-curl)
+16. [Step 13: Migrations, Running & Testing](#step-13-migrations-running--testing)
+17. [Step 14: API Reference & Testing with curl](#step-14-api-reference--testing-with-curl)
 
 ---
 
@@ -83,9 +84,23 @@ HTTP Request
 
 ---
 
-## 2. Prerequisites
+## 2. Naming Conventions Rule
+
+Throughout this codebase:
+
+- **Database name, table names & column names**: `snake_case` (e.g. database: `test_honojs_db`, tables: `users`, `posts`, columns: `id`, `name`, `email`, `password_hash`, `author_id`, `created_at`, `updated_at`, etc.)
+- **Custom variables & functions**: `snake_case` (e.g. `create_app`, `handle_shutdown`, `format_zod_error`, `auth_middleware`, `find_by_id`, `get_user_by_id`, `register_schema`, etc.)
+- **Custom types**: `TPascalCase` prefixed with `T` (e.g. `TUserRole`, `THonoEnv`, `TEnv`, `TUser`, `TNewUser`, `TPost`, `TNewPost`, `TRegisterInput`, `TDatabase`, etc.)
+- **Custom interfaces**: `IPascalCase` prefixed with `I` (e.g. `IAuthUser`, `IJWTPayload`, `IApiResponse`, `IPostFindOptions`, `IPostWithAuthor`, `IValidationIssue`, `IValidationErrorLike`)
+- **Custom enums**: `EPascalCase` prefixed with `E`
+- **External libraries / imported symbols**: Default naming case from third-party libraries (e.g. `Hono`, `drizzle`, `pgTable`, `zValidator`, `logger`, `Bun.password.hash`, etc.)
+
+---
+
+## 3. Prerequisites
 
 Ensure you have installed:
+
 - **Bun**: v1.0+ (`curl -fsSL https://bun.sh/install | bash`)
 - **PostgreSQL**: v14+ running locally on port 5432
 - **Docker**: (Optional) for containerized deployment
@@ -198,11 +213,11 @@ Create `.env.example`:
 PORT=3000
 NODE_ENV=development
 
-# Database Configuration (PostgreSQL on local machine)
+# Database Configuration (PostgreSQL database: test_honojs_db)
 # When running locally with Bun:
-DATABASE_URL=postgres://test_honojs_db:test_honojs_db@localhost:5432/test_honojs_db
+DATABASE_URL=postgres://postgres:postgres@localhost:5432/test_honojs_db
 # When running in Docker connecting to host machine PostgreSQL:
-# DATABASE_URL=postgres://test_honojs_db:test_honojs_db@host.docker.internal:5432/test_honojs_db
+# DATABASE_URL=postgres://postgres:postgres@host.docker.internal:5432/test_honojs_db
 
 # Authentication
 JWT_SECRET=super-secret-jwt-key-change-this-in-production
@@ -227,7 +242,7 @@ export default defineConfig({
   out: "./drizzle",
   dialect: "postgresql",
   dbCredentials: {
-    url: process.env.DATABASE_URL || "postgres://test_honojs_db:test_honojs_db@localhost:5432/test_honojs_db",
+    url: process.env.DATABASE_URL || "postgres://postgres:postgres@localhost:5432/test_honojs_db",
   },
   verbose: true,
   strict: true,
@@ -309,24 +324,24 @@ CMD ["bun", "run", "src/server.ts"]
 ### `src/types/index.ts`
 
 ```typescript
-export type UserRole = "user" | "admin";
+export type TUserRole = "user" | "admin";
 
-export interface AuthUser {
+export interface IAuthUser {
   id: number;
   email: string;
-  role: UserRole;
+  role: TUserRole;
 }
 
-export interface JWTPayload {
+export interface IJWTPayload {
   [key: string]: unknown;
   id: number;
   email: string;
-  role: UserRole;
+  role: TUserRole;
   exp?: number;
   iat?: number;
 }
 
-export interface ApiResponse<T = unknown> {
+export interface IApiResponse<T = unknown> {
   success: boolean;
   message?: string;
   data?: T;
@@ -339,9 +354,9 @@ export interface ApiResponse<T = unknown> {
   errors?: unknown;
 }
 
-export type HonoEnv = {
+export type THonoEnv = {
   Variables: {
-    user: AuthUser;
+    user: IAuthUser;
   };
 };
 ```
@@ -355,30 +370,30 @@ export type HonoEnv = {
 ```typescript
 import { z } from "zod";
 
-const envSchema = z.object({
+const env_schema = z.object({
   PORT: z.coerce.number().default(3000),
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   DATABASE_URL: z
     .string()
-    .default("postgres://test_honojs_db:test_honojs_db@localhost:5432/test_honojs_db"),
+    .default("postgres://postgres:postgres@localhost:5432/test_honojs_db"),
   JWT_SECRET: z.string().min(8).default("default-development-jwt-secret-key-123456789"),
   JWT_EXPIRES_IN: z.string().default("7d"),
 });
 
-export type Env = z.infer<typeof envSchema>;
+export type TEnv = z.infer<typeof env_schema>;
 
-const parsedEnv = envSchema.safeParse(process.env);
+const parsed_env = env_schema.safeParse(process.env);
 
-if (!parsedEnv.success) {
-  console.error("❌ Invalid environment variables:", parsedEnv.error.flatten().fieldErrors);
+if (!parsed_env.success) {
+  console.error("❌ Invalid environment variables:", parsed_env.error.flatten().fieldErrors);
   if (process.env.NODE_ENV === "production") {
     throw new Error("Invalid environment configuration");
   }
 }
 
-export const env: Env = parsedEnv.success
-  ? parsedEnv.data
-  : envSchema.parse({
+export const env: TEnv = parsed_env.success
+  ? parsed_env.data
+  : env_schema.parse({
       PORT: process.env.PORT,
       NODE_ENV: process.env.NODE_ENV,
       DATABASE_URL: process.env.DATABASE_URL,
@@ -402,18 +417,18 @@ export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 100 }).notNull(),
   email: varchar("email", { length: 255 }).notNull().unique(),
-  passwordHash: varchar("password_hash", { length: 255 }).notNull(),
+  password_hash: varchar("password_hash", { length: 255 }).notNull(),
   role: varchar("role", { length: 20 }).default("user").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const usersRelations = relations(users, ({ many }) => ({
+export const users_relations = relations(users, ({ many }) => ({
   posts: many(posts),
 }));
 
-export type User = typeof users.$inferSelect;
-export type NewUser = typeof users.$inferInsert;
+export type TUser = typeof users.$inferSelect;
+export type TNewUser = typeof users.$inferInsert;
 ```
 
 ### `src/db/schema/posts.ts`
@@ -428,22 +443,22 @@ export const posts = pgTable("posts", {
   title: varchar("title", { length: 255 }).notNull(),
   content: text("content").notNull(),
   published: boolean("published").default(false).notNull(),
-  authorId: integer("author_id")
+  author_id: integer("author_id")
     .references(() => users.id, { onDelete: "cascade" })
     .notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const postsRelations = relations(posts, ({ one }) => ({
+export const posts_relations = relations(posts, ({ one }) => ({
   author: one(users, {
-    fields: [posts.authorId],
+    fields: [posts.author_id],
     references: [users.id],
   }),
 }));
 
-export type Post = typeof posts.$inferSelect;
-export type NewPost = typeof posts.$inferInsert;
+export type TPost = typeof posts.$inferSelect;
+export type TNewPost = typeof posts.$inferInsert;
 ```
 
 ### `src/db/schema/index.ts`
@@ -461,14 +476,14 @@ import postgres from "postgres";
 import * as schema from "./schema";
 import { env } from "../config/env";
 
-export const queryClient = postgres(env.DATABASE_URL, {
+export const query_client = postgres(env.DATABASE_URL, {
   max: 10,
   idle_timeout: 20,
   connect_timeout: 10,
 });
 
-export const db = drizzle(queryClient, { schema });
-export type Database = typeof db;
+export const db = drizzle(query_client, { schema });
+export type TDatabase = typeof db;
 export { schema };
 ```
 
@@ -480,13 +495,13 @@ export { schema };
 
 ```typescript
 import { eq, desc, count } from "drizzle-orm";
-import { db, type Database } from "../db";
-import { users, type User, type NewUser } from "../db/schema/users";
+import { db, type TDatabase } from "../db";
+import { users, type TUser, type TNewUser } from "../db/schema/users";
 
 export class UserRepository {
-  constructor(private readonly database: Database = db) {}
+  constructor(private readonly database: TDatabase = db) {}
 
-  async findById(id: number): Promise<User | undefined> {
+  async find_by_id(id: number): Promise<TUser | undefined> {
     const result = await this.database
       .select()
       .from(users)
@@ -495,7 +510,7 @@ export class UserRepository {
     return result[0];
   }
 
-  async findByEmail(email: string): Promise<User | undefined> {
+  async find_by_email(email: string): Promise<TUser | undefined> {
     const result = await this.database
       .select()
       .from(users)
@@ -504,13 +519,13 @@ export class UserRepository {
     return result[0];
   }
 
-  async findAll(limit: number = 10, offset: number = 0): Promise<User[]> {
+  async find_all(limit: number = 10, offset: number = 0): Promise<TUser[]> {
     return this.database
       .select()
       .from(users)
       .limit(limit)
       .offset(offset)
-      .orderBy(desc(users.createdAt));
+      .orderBy(desc(users.created_at));
   }
 
   async count(): Promise<number> {
@@ -518,12 +533,12 @@ export class UserRepository {
     return Number(result[0]?.total ?? 0);
   }
 
-  async create(userData: NewUser): Promise<User> {
+  async create(user_data: TNewUser): Promise<TUser> {
     const result = await this.database
       .insert(users)
       .values({
-        ...userData,
-        email: userData.email.toLowerCase(),
+        ...user_data,
+        email: user_data.email.toLowerCase(),
       })
       .returning();
     const user = result[0];
@@ -533,18 +548,18 @@ export class UserRepository {
     return user;
   }
 
-  async update(id: number, userData: Partial<NewUser>): Promise<User | undefined> {
-    const valuesToUpdate: Partial<NewUser> & { updatedAt: Date } = {
-      ...userData,
-      updatedAt: new Date(),
+  async update(id: number, user_data: Partial<TNewUser>): Promise<TUser | undefined> {
+    const values_to_update: Partial<TNewUser> & { updated_at: Date } = {
+      ...user_data,
+      updated_at: new Date(),
     };
-    if (userData.email) {
-      valuesToUpdate.email = userData.email.toLowerCase();
+    if (user_data.email) {
+      values_to_update.email = user_data.email.toLowerCase();
     }
 
     const result = await this.database
       .update(users)
-      .set(valuesToUpdate)
+      .set(values_to_update)
       .where(eq(users.id, id))
       .returning();
     return result[0];
@@ -559,25 +574,25 @@ export class UserRepository {
   }
 }
 
-export const userRepository = new UserRepository();
+export const user_repository = new UserRepository();
 ```
 
 ### `src/repositories/post.repository.ts`
 
 ```typescript
 import { eq, and, desc, count } from "drizzle-orm";
-import { db, type Database } from "../db";
-import { posts, type Post, type NewPost } from "../db/schema/posts";
+import { db, type TDatabase } from "../db";
+import { posts, type TPost, type TNewPost } from "../db/schema/posts";
 import { users } from "../db/schema/users";
 
-export interface PostFindOptions {
-  publishedOnly?: boolean;
-  authorId?: number;
+export interface IPostFindOptions {
+  published_only?: boolean;
+  author_id?: number;
   limit?: number;
   offset?: number;
 }
 
-export interface PostWithAuthor extends Post {
+export interface IPostWithAuthor extends TPost {
   author?: {
     id: number;
     name: string;
@@ -586,18 +601,18 @@ export interface PostWithAuthor extends Post {
 }
 
 export class PostRepository {
-  constructor(private readonly database: Database = db) {}
+  constructor(private readonly database: TDatabase = db) {}
 
-  async findById(id: number): Promise<PostWithAuthor | undefined> {
+  async find_by_id(id: number): Promise<IPostWithAuthor | undefined> {
     const result = await this.database
       .select({
         id: posts.id,
         title: posts.title,
         content: posts.content,
         published: posts.published,
-        authorId: posts.authorId,
-        createdAt: posts.createdAt,
-        updatedAt: posts.updatedAt,
+        author_id: posts.author_id,
+        created_at: posts.created_at,
+        updated_at: posts.updated_at,
         author: {
           id: users.id,
           name: users.name,
@@ -605,7 +620,7 @@ export class PostRepository {
         },
       })
       .from(posts)
-      .leftJoin(users, eq(posts.authorId, users.id))
+      .leftJoin(users, eq(posts.author_id, users.id))
       .where(eq(posts.id, id))
       .limit(1);
 
@@ -617,25 +632,25 @@ export class PostRepository {
       title: row.title,
       content: row.content,
       published: row.published,
-      authorId: row.authorId,
-      createdAt: row.createdAt,
-      updatedAt: row.updatedAt,
+      author_id: row.author_id,
+      created_at: row.created_at,
+      updated_at: row.updated_at,
       author: row.author?.id ? row.author : undefined,
     };
   }
 
-  async findAll(options: PostFindOptions = {}): Promise<PostWithAuthor[]> {
-    const { publishedOnly = false, authorId, limit = 10, offset = 0 } = options;
+  async find_all(options: IPostFindOptions = {}): Promise<IPostWithAuthor[]> {
+    const { published_only = false, author_id, limit = 10, offset = 0 } = options;
 
     const conditions = [];
-    if (publishedOnly) {
+    if (published_only) {
       conditions.push(eq(posts.published, true));
     }
-    if (authorId !== undefined) {
-      conditions.push(eq(posts.authorId, authorId));
+    if (author_id !== undefined) {
+      conditions.push(eq(posts.author_id, author_id));
     }
 
-    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+    const where_clause = conditions.length > 0 ? and(...conditions) : undefined;
 
     const query = this.database
       .select({
@@ -643,9 +658,9 @@ export class PostRepository {
         title: posts.title,
         content: posts.content,
         published: posts.published,
-        authorId: posts.authorId,
-        createdAt: posts.createdAt,
-        updatedAt: posts.updatedAt,
+        author_id: posts.author_id,
+        created_at: posts.created_at,
+        updated_at: posts.updated_at,
         author: {
           id: users.id,
           name: users.name,
@@ -653,11 +668,11 @@ export class PostRepository {
         },
       })
       .from(posts)
-      .leftJoin(users, eq(posts.authorId, users.id))
-      .where(whereClause)
+      .leftJoin(users, eq(posts.author_id, users.id))
+      .where(where_clause)
       .limit(limit)
       .offset(offset)
-      .orderBy(desc(posts.createdAt));
+      .orderBy(desc(posts.created_at));
 
     const rows = await query;
     return rows.map((row) => ({
@@ -665,36 +680,36 @@ export class PostRepository {
       title: row.title,
       content: row.content,
       published: row.published,
-      authorId: row.authorId,
-      createdAt: row.createdAt,
-      updatedAt: row.updatedAt,
+      author_id: row.author_id,
+      created_at: row.created_at,
+      updated_at: row.updated_at,
       author: row.author?.id ? row.author : undefined,
     }));
   }
 
-  async count(options: Omit<PostFindOptions, "limit" | "offset"> = {}): Promise<number> {
-    const { publishedOnly = false, authorId } = options;
+  async count(options: Omit<IPostFindOptions, "limit" | "offset"> = {}): Promise<number> {
+    const { published_only = false, author_id } = options;
 
     const conditions = [];
-    if (publishedOnly) {
+    if (published_only) {
       conditions.push(eq(posts.published, true));
     }
-    if (authorId !== undefined) {
-      conditions.push(eq(posts.authorId, authorId));
+    if (author_id !== undefined) {
+      conditions.push(eq(posts.author_id, author_id));
     }
 
-    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+    const where_clause = conditions.length > 0 ? and(...conditions) : undefined;
 
     const result = await this.database
       .select({ total: count() })
       .from(posts)
-      .where(whereClause);
+      .where(where_clause);
 
     return Number(result[0]?.total ?? 0);
   }
 
-  async create(postData: NewPost): Promise<Post> {
-    const result = await this.database.insert(posts).values(postData).returning();
+  async create(post_data: TNewPost): Promise<TPost> {
+    const result = await this.database.insert(posts).values(post_data).returning();
     const post = result[0];
     if (!post) {
       throw new Error("Failed to create post");
@@ -702,12 +717,12 @@ export class PostRepository {
     return post;
   }
 
-  async update(id: number, postData: Partial<NewPost>): Promise<Post | undefined> {
+  async update(id: number, post_data: Partial<TNewPost>): Promise<TPost | undefined> {
     const result = await this.database
       .update(posts)
       .set({
-        ...postData,
-        updatedAt: new Date(),
+        ...post_data,
+        updated_at: new Date(),
       })
       .where(eq(posts.id, id))
       .returning();
@@ -723,7 +738,7 @@ export class PostRepository {
   }
 }
 
-export const postRepository = new PostRepository();
+export const post_repository = new PostRepository();
 ```
 
 ---
@@ -735,20 +750,20 @@ export const postRepository = new PostRepository();
 ```typescript
 import { z } from "zod";
 
-export const registerSchema = z.object({
+export const register_schema = z.object({
   name: z.string().trim().min(2, "Name must be at least 2 characters").max(100),
   email: z.string().trim().toLowerCase().email("Invalid email address"),
   password: z.string().min(6, "Password must be at least 6 characters").max(100),
   role: z.enum(["user", "admin"]).default("user").optional(),
 });
 
-export const loginSchema = z.object({
+export const login_schema = z.object({
   email: z.string().trim().toLowerCase().email("Invalid email address"),
   password: z.string().min(1, "Password is required"),
 });
 
-export type RegisterInput = z.infer<typeof registerSchema>;
-export type LoginInput = z.infer<typeof loginSchema>;
+export type TRegisterInput = z.infer<typeof register_schema>;
+export type TLoginInput = z.infer<typeof login_schema>;
 ```
 
 ### `src/validators/user.validator.ts`
@@ -756,25 +771,25 @@ export type LoginInput = z.infer<typeof loginSchema>;
 ```typescript
 import { z } from "zod";
 
-export const userParamSchema = z.object({
+export const user_param_schema = z.object({
   id: z.coerce.number().int().positive("User ID must be a positive integer"),
 });
 
-export const updateUserSchema = z.object({
+export const update_user_schema = z.object({
   name: z.string().trim().min(2).max(100).optional(),
   email: z.string().trim().toLowerCase().email().optional(),
   password: z.string().min(6).max(100).optional(),
   role: z.enum(["user", "admin"]).optional(),
 });
 
-export const userQuerySchema = z.object({
+export const user_query_schema = z.object({
   page: z.coerce.number().int().positive().default(1),
   limit: z.coerce.number().int().positive().max(100).default(10),
 });
 
-export type UpdateUserInput = z.infer<typeof updateUserSchema>;
-export type UserParamInput = z.infer<typeof userParamSchema>;
-export type UserQueryInput = z.infer<typeof userQuerySchema>;
+export type TUpdateUserInput = z.infer<typeof update_user_schema>;
+export type TUserParamInput = z.infer<typeof user_param_schema>;
+export type TUserQueryInput = z.infer<typeof user_query_schema>;
 ```
 
 ### `src/validators/post.validator.ts`
@@ -782,36 +797,36 @@ export type UserQueryInput = z.infer<typeof userQuerySchema>;
 ```typescript
 import { z } from "zod";
 
-export const postParamSchema = z.object({
+export const post_param_schema = z.object({
   id: z.coerce.number().int().positive("Post ID must be a positive integer"),
 });
 
-export const createPostSchema = z.object({
+export const create_post_schema = z.object({
   title: z.string().trim().min(1, "Title is required").max(255),
   content: z.string().trim().min(1, "Content is required"),
   published: z.boolean().default(false).optional(),
 });
 
-export const updatePostSchema = z.object({
+export const update_post_schema = z.object({
   title: z.string().trim().min(1).max(255).optional(),
   content: z.string().trim().min(1).optional(),
   published: z.boolean().optional(),
 });
 
-export const postQuerySchema = z.object({
+export const post_query_schema = z.object({
   page: z.coerce.number().int().positive().default(1),
   limit: z.coerce.number().int().positive().max(100).default(10),
   published: z
     .enum(["true", "false"])
     .transform((val) => val === "true")
     .optional(),
-  authorId: z.coerce.number().int().positive().optional(),
+  author_id: z.coerce.number().int().positive().optional(),
 });
 
-export type CreatePostInput = z.infer<typeof createPostSchema>;
-export type UpdatePostInput = z.infer<typeof updatePostSchema>;
-export type PostParamInput = z.infer<typeof postParamSchema>;
-export type PostQueryInput = z.infer<typeof postQuerySchema>;
+export type TCreatePostInput = z.infer<typeof create_post_schema>;
+export type TUpdatePostInput = z.infer<typeof update_post_schema>;
+export type TPostParamInput = z.infer<typeof post_param_schema>;
+export type TPostQueryInput = z.infer<typeof post_query_schema>;
 ```
 
 ### `src/validators/index.ts`
@@ -821,22 +836,22 @@ export * from "./auth.validator";
 export * from "./user.validator";
 export * from "./post.validator";
 
-export interface ValidationIssue {
+export interface IValidationIssue {
   path?: (string | number)[];
   message?: string;
 }
 
-export interface ValidationErrorLike {
-  issues?: ValidationIssue[];
+export interface IValidationErrorLike {
+  issues?: IValidationIssue[];
   message?: string;
 }
 
-export function formatZodError(error: unknown): Record<string, string[]> | string {
+export function format_zod_error(error: unknown): Record<string, string[]> | string {
   if (!error || typeof error !== "object") {
     return "Invalid input";
   }
 
-  const err = error as ValidationErrorLike;
+  const err = error as IValidationErrorLike;
   if (Array.isArray(err.issues) && err.issues.length > 0) {
     const formatted: Record<string, string[]> = {};
     for (const issue of err.issues) {
@@ -865,7 +880,7 @@ export function formatZodError(error: unknown): Record<string, string[]> | strin
 import type { Context, ErrorHandler, NotFoundHandler } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
-import { formatZodError } from "../validators";
+import { format_zod_error } from "../validators";
 
 export class AppError extends Error {
   public readonly statusCode: ContentfulStatusCode;
@@ -879,7 +894,7 @@ export class AppError extends Error {
   }
 }
 
-export const errorHandler: ErrorHandler = (err: Error, c: Context) => {
+export const error_handler: ErrorHandler = (err: Error, c: Context) => {
   console.error(`[Error] ${err.name}: ${err.message}`, err.stack);
 
   if (err instanceof AppError) {
@@ -909,7 +924,7 @@ export const errorHandler: ErrorHandler = (err: Error, c: Context) => {
       {
         success: false,
         message: "Validation Error",
-        errors: formatZodError(err),
+        errors: format_zod_error(err),
       },
       400
     );
@@ -917,13 +932,13 @@ export const errorHandler: ErrorHandler = (err: Error, c: Context) => {
 
   // Handle postgres database unique constraint error code
   if (typeof err === "object" && err !== null && "code" in err) {
-    const pgError = err as { code: string; detail?: string };
-    if (pgError.code === "23505") {
+    const pg_error = err as { code: string; detail?: string };
+    if (pg_error.code === "23505") {
       return c.json(
         {
           success: false,
           message: "A resource with this identifier or unique field already exists",
-          detail: pgError.detail,
+          detail: pg_error.detail,
         },
         409
       );
@@ -939,7 +954,7 @@ export const errorHandler: ErrorHandler = (err: Error, c: Context) => {
   );
 };
 
-export const notFoundHandler: NotFoundHandler = (c: Context) => {
+export const not_found_handler: NotFoundHandler = (c: Context) => {
   return c.json(
     {
       success: false,
@@ -954,23 +969,23 @@ export const notFoundHandler: NotFoundHandler = (c: Context) => {
 
 ```typescript
 import type { MiddlewareHandler } from "hono";
-import { authService } from "../services/auth.service";
+import { auth_service } from "../services/auth.service";
 import { AppError } from "./error.middleware";
-import type { HonoEnv, UserRole } from "../types";
+import type { THonoEnv, TUserRole } from "../types";
 
-export const authMiddleware: MiddlewareHandler<HonoEnv> = async (c, next) => {
-  const authHeader = c.req.header("Authorization");
+export const auth_middleware: MiddlewareHandler<THonoEnv> = async (c, next) => {
+  const auth_header = c.req.header("Authorization");
 
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+  if (!auth_header || !auth_header.startsWith("Bearer ")) {
     throw new AppError("Authorization header missing or invalid format (Bearer required)", 401);
   }
 
-  const token = authHeader.substring(7).trim();
+  const token = auth_header.substring(7).trim();
   if (!token) {
     throw new AppError("Authentication token is required", 401);
   }
 
-  const payload = await authService.verifyToken(token);
+  const payload = await auth_service.verify_token(token);
   c.set("user", {
     id: payload.id,
     email: payload.email,
@@ -980,7 +995,7 @@ export const authMiddleware: MiddlewareHandler<HonoEnv> = async (c, next) => {
   await next();
 };
 
-export const requireRole = (...roles: UserRole[]): MiddlewareHandler<HonoEnv> => {
+export const require_role = (...roles: TUserRole[]): MiddlewareHandler<THonoEnv> => {
   return async (c, next) => {
     const user = c.get("user");
     if (!user) {
@@ -1004,78 +1019,78 @@ export const requireRole = (...roles: UserRole[]): MiddlewareHandler<HonoEnv> =>
 
 ```typescript
 import { sign, verify } from "hono/jwt";
-import { userRepository, UserRepository } from "../repositories/user.repository";
+import { user_repository, UserRepository } from "../repositories/user.repository";
 import { AppError } from "../middlewares/error.middleware";
 import { env } from "../config/env";
-import type { RegisterInput, LoginInput } from "../validators/auth.validator";
-import type { AuthUser, JWTPayload } from "../types";
-import type { User } from "../db/schema/users";
+import type { TRegisterInput, TLoginInput } from "../validators/auth.validator";
+import type { IAuthUser, IJWTPayload } from "../types";
+import type { TUser } from "../db/schema/users";
 
 export class AuthService {
-  constructor(private readonly userRepo: UserRepository = userRepository) {}
+  constructor(private readonly user_repo: UserRepository = user_repository) {}
 
-  async register(input: RegisterInput): Promise<{ user: Omit<User, "passwordHash">; token: string }> {
-    const existing = await this.userRepo.findByEmail(input.email);
-    if (existing) {
+  async register(input: TRegisterInput): Promise<{ user: Omit<TUser, "password_hash">; token: string }> {
+    const existing_user = await this.user_repo.find_by_email(input.email);
+    if (existing_user) {
       throw new AppError("A user with this email already exists", 409);
     }
 
     // Native Bun password hashing (Bcrypt)
-    const passwordHash = await Bun.password.hash(input.password, {
+    const password_hash = await Bun.password.hash(input.password, {
       algorithm: "bcrypt",
       cost: 10,
     });
 
-    const user = await this.userRepo.create({
+    const user = await this.user_repo.create({
       name: input.name,
       email: input.email,
-      passwordHash,
+      password_hash: password_hash,
       role: input.role || "user",
     });
 
-    const authUser: AuthUser = {
+    const auth_user: IAuthUser = {
       id: user.id,
       email: user.email,
-      role: user.role as AuthUser["role"],
+      role: user.role as IAuthUser["role"],
     };
 
-    const token = await this.generateToken(authUser);
+    const token = await this.generate_token(auth_user);
 
-    const { passwordHash: _, ...sanitizedUser } = user;
+    const { password_hash: _, ...sanitized_user } = user;
     return {
-      user: sanitizedUser,
+      user: sanitized_user,
       token,
     };
   }
 
-  async login(input: LoginInput): Promise<{ user: Omit<User, "passwordHash">; token: string }> {
-    const user = await this.userRepo.findByEmail(input.email);
+  async login(input: TLoginInput): Promise<{ user: Omit<TUser, "password_hash">; token: string }> {
+    const user = await this.user_repo.find_by_email(input.email);
     if (!user) {
       throw new AppError("Invalid email or password", 401);
     }
 
-    const isValidPassword = await Bun.password.verify(input.password, user.passwordHash);
-    if (!isValidPassword) {
+    const is_valid_password = await Bun.password.verify(input.password, user.password_hash);
+    if (!is_valid_password) {
       throw new AppError("Invalid email or password", 401);
     }
 
-    const authUser: AuthUser = {
+    const auth_user: IAuthUser = {
       id: user.id,
       email: user.email,
-      role: user.role as AuthUser["role"],
+      role: user.role as IAuthUser["role"],
     };
 
-    const token = await this.generateToken(authUser);
+    const token = await this.generate_token(auth_user);
 
-    const { passwordHash: _, ...sanitizedUser } = user;
+    const { password_hash: _, ...sanitized_user } = user;
     return {
-      user: sanitizedUser,
+      user: sanitized_user,
       token,
     };
   }
 
-  async generateToken(user: AuthUser): Promise<string> {
-    const payload: JWTPayload = {
+  async generate_token(user: IAuthUser): Promise<string> {
+    const payload: IJWTPayload = {
       id: user.id,
       email: user.email,
       role: user.role,
@@ -1086,65 +1101,65 @@ export class AuthService {
     return await sign(payload, env.JWT_SECRET, "HS256");
   }
 
-  async verifyToken(token: string): Promise<JWTPayload> {
+  async verify_token(token: string): Promise<IJWTPayload> {
     try {
       const decoded = await verify(token, env.JWT_SECRET, "HS256");
-      return decoded as unknown as JWTPayload;
+      return decoded as unknown as IJWTPayload;
     } catch {
       throw new AppError("Invalid or expired authentication token", 401);
     }
   }
 
-  async getMe(userId: number): Promise<Omit<User, "passwordHash">> {
-    const user = await this.userRepo.findById(userId);
+  async get_me(user_id: number): Promise<Omit<TUser, "password_hash">> {
+    const user = await this.user_repo.find_by_id(user_id);
     if (!user) {
       throw new AppError("User not found", 404);
     }
-    const { passwordHash: _, ...sanitizedUser } = user;
-    return sanitizedUser;
+    const { password_hash: _, ...sanitized_user } = user;
+    return sanitized_user;
   }
 }
 
-export const authService = new AuthService();
+export const auth_service = new AuthService();
 ```
 
 ### `src/services/user.service.ts`
 
 ```typescript
-import { userRepository, UserRepository } from "../repositories/user.repository";
+import { user_repository, UserRepository } from "../repositories/user.repository";
 import { AppError } from "../middlewares/error.middleware";
-import type { UpdateUserInput } from "../validators/user.validator";
-import type { AuthUser } from "../types";
-import type { User, NewUser } from "../db/schema/users";
+import type { TUpdateUserInput } from "../validators/user.validator";
+import type { IAuthUser } from "../types";
+import type { TUser, TNewUser } from "../db/schema/users";
 
 export class UserService {
-  constructor(private readonly userRepo: UserRepository = userRepository) {}
+  constructor(private readonly user_repo: UserRepository = user_repository) {}
 
-  private sanitizeUser(user: User): Omit<User, "passwordHash"> {
-    const { passwordHash: _, ...sanitized } = user;
+  private sanitize_user(user: TUser): Omit<TUser, "password_hash"> {
+    const { password_hash: _, ...sanitized } = user;
     return sanitized;
   }
 
-  async getUserById(id: number): Promise<Omit<User, "passwordHash">> {
-    const user = await this.userRepo.findById(id);
+  async get_user_by_id(id: number): Promise<Omit<TUser, "password_hash">> {
+    const user = await this.user_repo.find_by_id(id);
     if (!user) {
       throw new AppError("User not found", 404);
     }
-    return this.sanitizeUser(user);
+    return this.sanitize_user(user);
   }
 
-  async getAllUsers(page: number = 1, limit: number = 10): Promise<{
-    users: Omit<User, "passwordHash">[];
+  async get_all_users(page: number = 1, limit: number = 10): Promise<{
+    users: Omit<TUser, "password_hash">[];
     meta: { page: number; limit: number; total: number; totalPages: number };
   }> {
     const offset = (page - 1) * limit;
-    const [userList, total] = await Promise.all([
-      this.userRepo.findAll(limit, offset),
-      this.userRepo.count(),
+    const [user_list, total] = await Promise.all([
+      this.user_repo.find_all(limit, offset),
+      this.user_repo.count(),
     ]);
 
     return {
-      users: userList.map((u) => this.sanitizeUser(u)),
+      users: user_list.map((u) => this.sanitize_user(u)),
       meta: {
         page,
         limit,
@@ -1154,111 +1169,111 @@ export class UserService {
     };
   }
 
-  async updateUser(
+  async update_user(
     id: number,
-    input: UpdateUserInput,
-    requestingUser: AuthUser
-  ): Promise<Omit<User, "passwordHash">> {
+    input: TUpdateUserInput,
+    requesting_user: IAuthUser
+  ): Promise<Omit<TUser, "password_hash">> {
     // Only allow updating own profile unless admin
-    if (requestingUser.id !== id && requestingUser.role !== "admin") {
+    if (requesting_user.id !== id && requesting_user.role !== "admin") {
       throw new AppError("You do not have permission to update this user", 403);
     }
 
-    const existing = await this.userRepo.findById(id);
-    if (!existing) {
+    const existing_user = await this.user_repo.find_by_id(id);
+    if (!existing_user) {
       throw new AppError("User not found", 404);
     }
 
-    if (input.email && input.email !== existing.email) {
-      const emailInUse = await this.userRepo.findByEmail(input.email);
-      if (emailInUse) {
+    if (input.email && input.email !== existing_user.email) {
+      const email_in_use = await this.user_repo.find_by_email(input.email);
+      if (email_in_use) {
         throw new AppError("Email is already taken", 409);
       }
     }
 
-    const updateData: Partial<NewUser> = {};
-    if (input.name) updateData.name = input.name;
-    if (input.email) updateData.email = input.email;
-    if (input.role && requestingUser.role === "admin") updateData.role = input.role;
+    const update_data: Partial<TNewUser> = {};
+    if (input.name) update_data.name = input.name;
+    if (input.email) update_data.email = input.email;
+    if (input.role && requesting_user.role === "admin") update_data.role = input.role;
 
     if (input.password) {
-      updateData.passwordHash = await Bun.password.hash(input.password, {
+      update_data.password_hash = await Bun.password.hash(input.password, {
         algorithm: "bcrypt",
         cost: 10,
       });
     }
 
-    const updated = await this.userRepo.update(id, updateData);
+    const updated = await this.user_repo.update(id, update_data);
     if (!updated) {
       throw new AppError("Failed to update user", 500);
     }
 
-    return this.sanitizeUser(updated);
+    return this.sanitize_user(updated);
   }
 
-  async deleteUser(id: number, requestingUser: AuthUser): Promise<void> {
+  async delete_user(id: number, requesting_user: IAuthUser): Promise<void> {
     // Only allow self deletion or admin deletion
-    if (requestingUser.id !== id && requestingUser.role !== "admin") {
+    if (requesting_user.id !== id && requesting_user.role !== "admin") {
       throw new AppError("You do not have permission to delete this user", 403);
     }
 
-    const existing = await this.userRepo.findById(id);
-    if (!existing) {
+    const existing_user = await this.user_repo.find_by_id(id);
+    if (!existing_user) {
       throw new AppError("User not found", 404);
     }
 
-    const deleted = await this.userRepo.delete(id);
+    const deleted = await this.user_repo.delete(id);
     if (!deleted) {
       throw new AppError("Failed to delete user", 500);
     }
   }
 }
 
-export const userService = new UserService();
+export const user_service = new UserService();
 ```
 
 ### `src/services/post.service.ts`
 
 ```typescript
-import { postRepository, PostRepository, type PostWithAuthor } from "../repositories/post.repository";
+import { post_repository, PostRepository, type IPostWithAuthor } from "../repositories/post.repository";
 import { AppError } from "../middlewares/error.middleware";
-import type { CreatePostInput, UpdatePostInput, PostQueryInput } from "../validators/post.validator";
-import type { AuthUser } from "../types";
-import type { Post } from "../db/schema/posts";
+import type { TCreatePostInput, TUpdatePostInput, TPostQueryInput } from "../validators/post.validator";
+import type { IAuthUser } from "../types";
+import type { TPost } from "../db/schema/posts";
 
 export class PostService {
-  constructor(private readonly postRepo: PostRepository = postRepository) {}
+  constructor(private readonly post_repo: PostRepository = post_repository) {}
 
-  async getPostById(id: number): Promise<PostWithAuthor> {
-    const post = await this.postRepo.findById(id);
+  async get_post_by_id(id: number): Promise<IPostWithAuthor> {
+    const post = await this.post_repo.find_by_id(id);
     if (!post) {
       throw new AppError("Post not found", 404);
     }
     return post;
   }
 
-  async getAllPosts(query: PostQueryInput): Promise<{
-    posts: PostWithAuthor[];
+  async get_all_posts(query: TPostQueryInput): Promise<{
+    posts: IPostWithAuthor[];
     meta: { page: number; limit: number; total: number; totalPages: number };
   }> {
-    const { page = 1, limit = 10, published, authorId } = query;
+    const { page = 1, limit = 10, published, author_id } = query;
     const offset = (page - 1) * limit;
 
-    const [postList, total] = await Promise.all([
-      this.postRepo.findAll({
-        publishedOnly: published,
-        authorId,
+    const [post_list, total] = await Promise.all([
+      this.post_repo.find_all({
+        published_only: published,
+        author_id: author_id,
         limit,
         offset,
       }),
-      this.postRepo.count({
-        publishedOnly: published,
-        authorId,
+      this.post_repo.count({
+        published_only: published,
+        author_id: author_id,
       }),
     ]);
 
     return {
-      posts: postList,
+      posts: post_list,
       meta: {
         page,
         limit,
@@ -1268,31 +1283,31 @@ export class PostService {
     };
   }
 
-  async createPost(authorId: number, input: CreatePostInput): Promise<Post> {
-    return await this.postRepo.create({
+  async create_post(author_id: number, input: TCreatePostInput): Promise<TPost> {
+    return await this.post_repo.create({
       title: input.title,
       content: input.content,
       published: input.published ?? false,
-      authorId,
+      author_id: author_id,
     });
   }
 
-  async updatePost(
+  async update_post(
     id: number,
-    requestingUser: AuthUser,
-    input: UpdatePostInput
-  ): Promise<Post> {
-    const existing = await this.postRepo.findById(id);
+    requesting_user: IAuthUser,
+    input: TUpdatePostInput
+  ): Promise<TPost> {
+    const existing = await this.post_repo.find_by_id(id);
     if (!existing) {
       throw new AppError("Post not found", 404);
     }
 
     // Only the author or an admin can update the post
-    if (existing.authorId !== requestingUser.id && requestingUser.role !== "admin") {
+    if (existing.author_id !== requesting_user.id && requesting_user.role !== "admin") {
       throw new AppError("You do not have permission to modify this post", 403);
     }
 
-    const updated = await this.postRepo.update(id, input);
+    const updated = await this.post_repo.update(id, input);
     if (!updated) {
       throw new AppError("Failed to update post", 500);
     }
@@ -1300,25 +1315,25 @@ export class PostService {
     return updated;
   }
 
-  async deletePost(id: number, requestingUser: AuthUser): Promise<void> {
-    const existing = await this.postRepo.findById(id);
+  async delete_post(id: number, requesting_user: IAuthUser): Promise<void> {
+    const existing = await this.post_repo.find_by_id(id);
     if (!existing) {
       throw new AppError("Post not found", 404);
     }
 
     // Only the author or an admin can delete the post
-    if (existing.authorId !== requestingUser.id && requestingUser.role !== "admin") {
+    if (existing.author_id !== requesting_user.id && requesting_user.role !== "admin") {
       throw new AppError("You do not have permission to delete this post", 403);
     }
 
-    const deleted = await this.postRepo.delete(id);
+    const deleted = await this.post_repo.delete(id);
     if (!deleted) {
       throw new AppError("Failed to delete post", 500);
     }
   }
 }
 
-export const postService = new PostService();
+export const post_service = new PostService();
 ```
 
 ---
@@ -1330,15 +1345,15 @@ export const postService = new PostService();
 ```typescript
 import { Hono } from "hono";
 
-export const healthRoutes = new Hono();
+export const health_routes = new Hono();
 
-const startTime = Date.now();
+const start_time = Date.now();
 
-healthRoutes.get("/", (c) => {
+health_routes.get("/", (c) => {
   return c.json({
     status: "ok",
     timestamp: new Date().toISOString(),
-    uptime: `${Math.floor((Date.now() - startTime) / 1000)}s`,
+    uptime: `${Math.floor((Date.now() - start_time) / 1000)}s`,
     runtime: {
       name: "Bun",
       version: Bun.version,
@@ -1353,22 +1368,22 @@ healthRoutes.get("/", (c) => {
 ```typescript
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
-import { registerSchema, loginSchema, formatZodError } from "../validators";
-import { authService } from "../services/auth.service";
-import { authMiddleware } from "../middlewares/auth.middleware";
-import type { HonoEnv } from "../types";
+import { register_schema, login_schema, format_zod_error } from "../validators";
+import { auth_service } from "../services/auth.service";
+import { auth_middleware } from "../middlewares/auth.middleware";
+import type { THonoEnv } from "../types";
 
-export const authRoutes = new Hono<HonoEnv>();
+export const auth_routes = new Hono<THonoEnv>();
 
-authRoutes.post(
+auth_routes.post(
   "/register",
-  zValidator("json", registerSchema, (result, c) => {
+  zValidator("json", register_schema, (result, c) => {
     if (!result.success) {
       return c.json(
         {
           success: false,
           message: "Validation failed",
-          errors: formatZodError(result.error),
+          errors: format_zod_error(result.error),
         },
         400
       );
@@ -1376,7 +1391,7 @@ authRoutes.post(
   }),
   async (c) => {
     const body = c.req.valid("json");
-    const result = await authService.register(body);
+    const result = await auth_service.register(body);
 
     return c.json(
       {
@@ -1389,15 +1404,15 @@ authRoutes.post(
   }
 );
 
-authRoutes.post(
+auth_routes.post(
   "/login",
-  zValidator("json", loginSchema, (result, c) => {
+  zValidator("json", login_schema, (result, c) => {
     if (!result.success) {
       return c.json(
         {
           success: false,
           message: "Validation failed",
-          errors: formatZodError(result.error),
+          errors: format_zod_error(result.error),
         },
         400
       );
@@ -1405,7 +1420,7 @@ authRoutes.post(
   }),
   async (c) => {
     const body = c.req.valid("json");
-    const result = await authService.login(body);
+    const result = await auth_service.login(body);
 
     return c.json({
       success: true,
@@ -1415,9 +1430,9 @@ authRoutes.post(
   }
 );
 
-authRoutes.get("/me", authMiddleware, async (c) => {
+auth_routes.get("/me", auth_middleware, async (c) => {
   const user = c.get("user");
-  const profile = await authService.getMe(user.id);
+  const profile = await auth_service.get_me(user.id);
 
   return c.json({
     success: true,
@@ -1432,26 +1447,26 @@ authRoutes.get("/me", authMiddleware, async (c) => {
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import {
-  userParamSchema,
-  updateUserSchema,
-  userQuerySchema,
-  formatZodError,
+  user_param_schema,
+  update_user_schema,
+  user_query_schema,
+  format_zod_error,
 } from "../validators";
-import { userService } from "../services/user.service";
-import { authMiddleware } from "../middlewares/auth.middleware";
-import type { HonoEnv } from "../types";
+import { user_service } from "../services/user.service";
+import { auth_middleware } from "../middlewares/auth.middleware";
+import type { THonoEnv } from "../types";
 
-export const userRoutes = new Hono<HonoEnv>();
+export const user_routes = new Hono<THonoEnv>();
 
-userRoutes.get(
+user_routes.get(
   "/",
-  zValidator("query", userQuerySchema, (result, c) => {
+  zValidator("query", user_query_schema, (result, c) => {
     if (!result.success) {
       return c.json(
         {
           success: false,
           message: "Validation failed",
-          errors: formatZodError(result.error),
+          errors: format_zod_error(result.error),
         },
         400
       );
@@ -1459,7 +1474,7 @@ userRoutes.get(
   }),
   async (c) => {
     const { page, limit } = c.req.valid("query");
-    const result = await userService.getAllUsers(page, limit);
+    const result = await user_service.get_all_users(page, limit);
 
     return c.json({
       success: true,
@@ -1469,15 +1484,15 @@ userRoutes.get(
   }
 );
 
-userRoutes.get(
+user_routes.get(
   "/:id",
-  zValidator("param", userParamSchema, (result, c) => {
+  zValidator("param", user_param_schema, (result, c) => {
     if (!result.success) {
       return c.json(
         {
           success: false,
           message: "Invalid ID parameter",
-          errors: formatZodError(result.error),
+          errors: format_zod_error(result.error),
         },
         400
       );
@@ -1485,7 +1500,7 @@ userRoutes.get(
   }),
   async (c) => {
     const { id } = c.req.valid("param");
-    const user = await userService.getUserById(id);
+    const user = await user_service.get_user_by_id(id);
 
     return c.json({
       success: true,
@@ -1494,28 +1509,28 @@ userRoutes.get(
   }
 );
 
-userRoutes.put(
+user_routes.put(
   "/:id",
-  authMiddleware,
-  zValidator("param", userParamSchema, (result, c) => {
+  auth_middleware,
+  zValidator("param", user_param_schema, (result, c) => {
     if (!result.success) {
       return c.json(
         {
           success: false,
           message: "Invalid ID parameter",
-          errors: formatZodError(result.error),
+          errors: format_zod_error(result.error),
         },
         400
       );
     }
   }),
-  zValidator("json", updateUserSchema, (result, c) => {
+  zValidator("json", update_user_schema, (result, c) => {
     if (!result.success) {
       return c.json(
         {
           success: false,
           message: "Validation failed",
-          errors: formatZodError(result.error),
+          errors: format_zod_error(result.error),
         },
         400
       );
@@ -1524,28 +1539,28 @@ userRoutes.put(
   async (c) => {
     const { id } = c.req.valid("param");
     const body = c.req.valid("json");
-    const requestingUser = c.get("user");
+    const requesting_user = c.get("user");
 
-    const updatedUser = await userService.updateUser(id, body, requestingUser);
+    const updated_user = await user_service.update_user(id, body, requesting_user);
 
     return c.json({
       success: true,
       message: "User updated successfully",
-      data: updatedUser,
+      data: updated_user,
     });
   }
 );
 
-userRoutes.delete(
+user_routes.delete(
   "/:id",
-  authMiddleware,
-  zValidator("param", userParamSchema, (result, c) => {
+  auth_middleware,
+  zValidator("param", user_param_schema, (result, c) => {
     if (!result.success) {
       return c.json(
         {
           success: false,
           message: "Invalid ID parameter",
-          errors: formatZodError(result.error),
+          errors: format_zod_error(result.error),
         },
         400
       );
@@ -1553,9 +1568,9 @@ userRoutes.delete(
   }),
   async (c) => {
     const { id } = c.req.valid("param");
-    const requestingUser = c.get("user");
+    const requesting_user = c.get("user");
 
-    await userService.deleteUser(id, requestingUser);
+    await user_service.delete_user(id, requesting_user);
 
     return c.json({
       success: true,
@@ -1571,27 +1586,27 @@ userRoutes.delete(
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import {
-  postParamSchema,
-  createPostSchema,
-  updatePostSchema,
-  postQuerySchema,
-  formatZodError,
+  post_param_schema,
+  create_post_schema,
+  update_post_schema,
+  post_query_schema,
+  format_zod_error,
 } from "../validators";
-import { postService } from "../services/post.service";
-import { authMiddleware } from "../middlewares/auth.middleware";
-import type { HonoEnv } from "../types";
+import { post_service } from "../services/post.service";
+import { auth_middleware } from "../middlewares/auth.middleware";
+import type { THonoEnv } from "../types";
 
-export const postRoutes = new Hono<HonoEnv>();
+export const post_routes = new Hono<THonoEnv>();
 
-postRoutes.get(
+post_routes.get(
   "/",
-  zValidator("query", postQuerySchema, (result, c) => {
+  zValidator("query", post_query_schema, (result, c) => {
     if (!result.success) {
       return c.json(
         {
           success: false,
           message: "Validation failed",
-          errors: formatZodError(result.error),
+          errors: format_zod_error(result.error),
         },
         400
       );
@@ -1599,7 +1614,7 @@ postRoutes.get(
   }),
   async (c) => {
     const query = c.req.valid("query");
-    const result = await postService.getAllPosts(query);
+    const result = await post_service.get_all_posts(query);
 
     return c.json({
       success: true,
@@ -1609,15 +1624,15 @@ postRoutes.get(
   }
 );
 
-postRoutes.get(
+post_routes.get(
   "/:id",
-  zValidator("param", postParamSchema, (result, c) => {
+  zValidator("param", post_param_schema, (result, c) => {
     if (!result.success) {
       return c.json(
         {
           success: false,
           message: "Invalid ID parameter",
-          errors: formatZodError(result.error),
+          errors: format_zod_error(result.error),
         },
         400
       );
@@ -1625,7 +1640,7 @@ postRoutes.get(
   }),
   async (c) => {
     const { id } = c.req.valid("param");
-    const post = await postService.getPostById(id);
+    const post = await post_service.get_post_by_id(id);
 
     return c.json({
       success: true,
@@ -1634,16 +1649,16 @@ postRoutes.get(
   }
 );
 
-postRoutes.post(
+post_routes.post(
   "/",
-  authMiddleware,
-  zValidator("json", createPostSchema, (result, c) => {
+  auth_middleware,
+  zValidator("json", create_post_schema, (result, c) => {
     if (!result.success) {
       return c.json(
         {
           success: false,
           message: "Validation failed",
-          errors: formatZodError(result.error),
+          errors: format_zod_error(result.error),
         },
         400
       );
@@ -1653,41 +1668,41 @@ postRoutes.post(
     const body = c.req.valid("json");
     const user = c.get("user");
 
-    const newPost = await postService.createPost(user.id, body);
+    const new_post = await post_service.create_post(user.id, body);
 
     return c.json(
       {
         success: true,
         message: "Post created successfully",
-        data: newPost,
+        data: new_post,
       },
       201
     );
   }
 );
 
-postRoutes.put(
+post_routes.put(
   "/:id",
-  authMiddleware,
-  zValidator("param", postParamSchema, (result, c) => {
+  auth_middleware,
+  zValidator("param", post_param_schema, (result, c) => {
     if (!result.success) {
       return c.json(
         {
           success: false,
           message: "Invalid ID parameter",
-          errors: formatZodError(result.error),
+          errors: format_zod_error(result.error),
         },
         400
       );
     }
   }),
-  zValidator("json", updatePostSchema, (result, c) => {
+  zValidator("json", update_post_schema, (result, c) => {
     if (!result.success) {
       return c.json(
         {
           success: false,
           message: "Validation failed",
-          errors: formatZodError(result.error),
+          errors: format_zod_error(result.error),
         },
         400
       );
@@ -1698,26 +1713,26 @@ postRoutes.put(
     const body = c.req.valid("json");
     const user = c.get("user");
 
-    const updatedPost = await postService.updatePost(id, user, body);
+    const updated_post = await post_service.update_post(id, user, body);
 
     return c.json({
       success: true,
       message: "Post updated successfully",
-      data: updatedPost,
+      data: updated_post,
     });
   }
 );
 
-postRoutes.delete(
+post_routes.delete(
   "/:id",
-  authMiddleware,
-  zValidator("param", postParamSchema, (result, c) => {
+  auth_middleware,
+  zValidator("param", post_param_schema, (result, c) => {
     if (!result.success) {
       return c.json(
         {
           success: false,
           message: "Invalid ID parameter",
-          errors: formatZodError(result.error),
+          errors: format_zod_error(result.error),
         },
         400
       );
@@ -1727,7 +1742,7 @@ postRoutes.delete(
     const { id } = c.req.valid("param");
     const user = c.get("user");
 
-    await postService.deletePost(id, user);
+    await post_service.delete_post(id, user);
 
     return c.json({
       success: true,
@@ -1741,13 +1756,13 @@ postRoutes.delete(
 
 ```typescript
 import { Hono } from "hono";
-import { authRoutes } from "./auth.routes";
-import { userRoutes } from "./user.routes";
-import { postRoutes } from "./post.routes";
-import { healthRoutes } from "./health.routes";
-import type { HonoEnv } from "../types";
+import { auth_routes } from "./auth.routes";
+import { user_routes } from "./user.routes";
+import { post_routes } from "./post.routes";
+import { health_routes } from "./health.routes";
+import type { THonoEnv } from "../types";
 
-export const routes = new Hono<HonoEnv>();
+export const routes = new Hono<THonoEnv>();
 
 routes.get("/", (c) => {
   return c.json({
@@ -1778,10 +1793,10 @@ routes.get("/", (c) => {
   });
 });
 
-routes.route("/health", healthRoutes);
-routes.route("/api/auth", authRoutes);
-routes.route("/api/users", userRoutes);
-routes.route("/api/posts", postRoutes);
+routes.route("/health", health_routes);
+routes.route("/api/auth", auth_routes);
+routes.route("/api/users", user_routes);
+routes.route("/api/posts", post_routes);
 ```
 
 ---
@@ -1797,11 +1812,11 @@ import { cors } from "hono/cors";
 import { secureHeaders } from "hono/secure-headers";
 import { trimTrailingSlash } from "hono/trailing-slash";
 import { routes } from "./routes";
-import { errorHandler, notFoundHandler } from "./middlewares/error.middleware";
-import type { HonoEnv } from "./types";
+import { error_handler, not_found_handler } from "./middlewares/error.middleware";
+import type { THonoEnv } from "./types";
 
-export function createApp(): Hono<HonoEnv> {
-  const app = new Hono<HonoEnv>();
+export function create_app(): Hono<THonoEnv> {
+  const app = new Hono<THonoEnv>();
 
   // Global Middlewares
   app.use("*", logger());
@@ -1822,15 +1837,15 @@ export function createApp(): Hono<HonoEnv> {
   app.route("/", routes);
 
   // 404 Not Found Handler
-  app.notFound(notFoundHandler);
+  app.notFound(not_found_handler);
 
   // Global Error Handler
-  app.onError(errorHandler);
+  app.onError(error_handler);
 
   return app;
 }
 
-export const app = createApp();
+export const app = create_app();
 ```
 
 ### `src/server.ts`
@@ -1854,14 +1869,14 @@ console.log(`
 ---------------------------------------------
 `);
 
-const handleShutdown = () => {
+const handle_shutdown = () => {
   console.log("\nGracefully shutting down server...");
   server.stop();
   process.exit(0);
 };
 
-process.on("SIGINT", handleShutdown);
-process.on("SIGTERM", handleShutdown);
+process.on("SIGINT", handle_shutdown);
+process.on("SIGTERM", handle_shutdown);
 
 export default server;
 ```
@@ -1924,25 +1939,25 @@ describe("Health Check API", () => {
 ```typescript
 import { describe, expect, it } from "bun:test";
 import {
-  registerSchema,
-  loginSchema,
-  createPostSchema,
-  updatePostSchema,
-  updateUserSchema,
-  userParamSchema,
-  postQuerySchema,
-  formatZodError,
+  register_schema,
+  login_schema,
+  create_post_schema,
+  update_post_schema,
+  update_user_schema,
+  user_param_schema,
+  post_query_schema,
+  format_zod_error,
 } from "../src/validators";
 
 describe("Zod Validators", () => {
-  describe("registerSchema", () => {
+  describe("register_schema", () => {
     it("should accept valid register input", () => {
       const valid = {
         name: "Alice Johnson",
         email: "alice@example.com",
         password: "securepassword123",
       };
-      const result = registerSchema.safeParse(valid);
+      const result = register_schema.safeParse(valid);
       expect(result.success).toBe(true);
     });
 
@@ -1952,22 +1967,22 @@ describe("Zod Validators", () => {
         email: "not-an-email",
         password: "123",
       };
-      const result = registerSchema.safeParse(invalid);
+      const result = register_schema.safeParse(invalid);
       expect(result.success).toBe(false);
       if (!result.success) {
-        const formatted = formatZodError(result.error);
+        const formatted = format_zod_error(result.error);
         expect(typeof formatted).toBe("object");
       }
     });
   });
 
-  describe("loginSchema", () => {
+  describe("login_schema", () => {
     it("should accept valid login input", () => {
       const valid = {
         email: "alice@example.com",
         password: "securepassword123",
       };
-      const result = loginSchema.safeParse(valid);
+      const result = login_schema.safeParse(valid);
       expect(result.success).toBe(true);
     });
 
@@ -1976,19 +1991,19 @@ describe("Zod Validators", () => {
         email: "alice@example.com",
         password: "",
       };
-      const result = loginSchema.safeParse(invalid);
+      const result = login_schema.safeParse(invalid);
       expect(result.success).toBe(false);
     });
   });
 
-  describe("createPostSchema", () => {
+  describe("create_post_schema", () => {
     it("should validate valid post creation payload", () => {
       const valid = {
         title: "Getting Started with Bun and Hono",
         content: "Hono is extremely fast and modular.",
         published: true,
       };
-      const result = createPostSchema.safeParse(valid);
+      const result = create_post_schema.safeParse(valid);
       expect(result.success).toBe(true);
     });
 
@@ -1997,28 +2012,28 @@ describe("Zod Validators", () => {
         title: "   ",
         content: "Some content",
       };
-      const result = createPostSchema.safeParse(invalid);
+      const result = create_post_schema.safeParse(invalid);
       expect(result.success).toBe(false);
     });
   });
 
-  describe("postQuerySchema", () => {
+  describe("post_query_schema", () => {
     it("should parse boolean string for published query param", () => {
-      const parsed = postQuerySchema.parse({ published: "true", page: "2", limit: "20" });
+      const parsed = post_query_schema.parse({ published: "true", page: "2", limit: "20" });
       expect(parsed.published).toBe(true);
       expect(parsed.page).toBe(2);
       expect(parsed.limit).toBe(20);
     });
   });
 
-  describe("userParamSchema", () => {
+  describe("user_param_schema", () => {
     it("should coerce string numbers into integer IDs", () => {
-      const parsed = userParamSchema.parse({ id: "42" });
+      const parsed = user_param_schema.parse({ id: "42" });
       expect(parsed.id).toBe(42);
     });
 
     it("should reject non-numeric IDs", () => {
-      const result = userParamSchema.safeParse({ id: "abc" });
+      const result = user_param_schema.safeParse({ id: "abc" });
       expect(result.success).toBe(false);
     });
   });
@@ -2034,34 +2049,34 @@ import { UserService } from "../src/services/user.service";
 import { PostService } from "../src/services/post.service";
 import { UserRepository } from "../src/repositories/user.repository";
 import { PostRepository } from "../src/repositories/post.repository";
-import type { User } from "../src/db/schema/users";
-import type { Post } from "../src/db/schema/posts";
+import type { TUser } from "../src/db/schema/users";
+import type { TPost } from "../src/db/schema/posts";
 
 describe("Service Layer Unit Tests", () => {
   describe("AuthService", () => {
     it("should hash passwords and generate JWT tokens on register", async () => {
-      const mockUsers: User[] = [];
-      const mockUserRepo = {
-        findByEmail: async (email: string) => mockUsers.find((u) => u.email === email),
-        findById: async (id: number) => mockUsers.find((u) => u.id === id),
+      const mock_users: TUser[] = [];
+      const mock_user_repo = {
+        find_by_email: async (email: string) => mock_users.find((u) => u.email === email),
+        find_by_id: async (id: number) => mock_users.find((u) => u.id === id),
         create: async (data: any) => {
-          const user: User = {
-            id: mockUsers.length + 1,
+          const user: TUser = {
+            id: mock_users.length + 1,
             name: data.name,
             email: data.email,
-            passwordHash: data.passwordHash,
+            password_hash: data.password_hash,
             role: data.role || "user",
-            createdAt: new Date(),
-            updatedAt: new Date(),
+            created_at: new Date(),
+            updated_at: new Date(),
           };
-          mockUsers.push(user);
+          mock_users.push(user);
           return user;
         },
       } as unknown as UserRepository;
 
-      const authService = new AuthService(mockUserRepo);
+      const auth_service_instance = new AuthService(mock_user_repo);
 
-      const result = await authService.register({
+      const result = await auth_service_instance.register({
         name: "Test User",
         email: "test@example.com",
         password: "secretpassword",
@@ -2069,49 +2084,49 @@ describe("Service Layer Unit Tests", () => {
 
       expect(result.user.id).toBe(1);
       expect(result.user.email).toBe("test@example.com");
-      expect((result.user as any).passwordHash).toBeUndefined();
+      expect((result.user as any).password_hash).toBeUndefined();
       expect(typeof result.token).toBe("string");
 
-      const payload = await authService.verifyToken(result.token);
+      const payload = await auth_service_instance.verify_token(result.token);
       expect(payload.id).toBe(1);
       expect(payload.email).toBe("test@example.com");
       expect(payload.role).toBe("user");
     });
 
     it("should authenticate valid credentials on login", async () => {
-      const passwordHash = await Bun.password.hash("correct-password", {
+      const password_hash = await Bun.password.hash("correct-password", {
         algorithm: "bcrypt",
       });
 
-      const mockUsers: User[] = [
+      const mock_users: TUser[] = [
         {
           id: 10,
           name: "Existing User",
           email: "existing@example.com",
-          passwordHash,
+          password_hash: password_hash,
           role: "user",
-          createdAt: new Date(),
-          updatedAt: new Date(),
+          created_at: new Date(),
+          updated_at: new Date(),
         },
       ];
 
-      const mockUserRepo = {
-        findByEmail: async (email: string) => mockUsers.find((u) => u.email === email),
-        findById: async (id: number) => mockUsers.find((u) => u.id === id),
+      const mock_user_repo = {
+        find_by_email: async (email: string) => mock_users.find((u) => u.email === email),
+        find_by_id: async (id: number) => mock_users.find((u) => u.id === id),
       } as unknown as UserRepository;
 
-      const authService = new AuthService(mockUserRepo);
+      const auth_service_instance = new AuthService(mock_user_repo);
 
-      const loginResult = await authService.login({
+      const login_result = await auth_service_instance.login({
         email: "existing@example.com",
         password: "correct-password",
       });
 
-      expect(loginResult.user.id).toBe(10);
-      expect(loginResult.token).toBeDefined();
+      expect(login_result.user.id).toBe(10);
+      expect(login_result.token).toBeDefined();
 
       expect(
-        authService.login({
+        auth_service_instance.login({
           email: "existing@example.com",
           password: "wrong-password",
         })
@@ -2121,22 +2136,22 @@ describe("Service Layer Unit Tests", () => {
 
   describe("UserService", () => {
     it("should prevent non-admin users from modifying other user accounts", async () => {
-      const mockUserRepo = {
-        findById: async (id: number) => ({
+      const mock_user_repo = {
+        find_by_id: async (id: number) => ({
           id,
           name: "Other User",
           email: "other@example.com",
-          passwordHash: "hash",
+          password_hash: "hash",
           role: "user",
-          createdAt: new Date(),
-          updatedAt: new Date(),
+          created_at: new Date(),
+          updated_at: new Date(),
         }),
       } as unknown as UserRepository;
 
-      const userService = new UserService(mockUserRepo);
+      const user_service_instance = new UserService(mock_user_repo);
 
       expect(
-        userService.updateUser(
+        user_service_instance.update_user(
           2,
           { name: "Hacked" },
           { id: 1, email: "me@example.com", role: "user" }
@@ -2147,44 +2162,44 @@ describe("Service Layer Unit Tests", () => {
 
   describe("PostService", () => {
     it("should allow author or admin to update their post and block unauthorized users", async () => {
-      const mockPost: Post = {
+      const mock_post: TPost = {
         id: 100,
         title: "Original Title",
         content: "Original Content",
         published: false,
-        authorId: 5,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        author_id: 5,
+        created_at: new Date(),
+        updated_at: new Date(),
       };
 
-      const mockPostRepo = {
-        findById: async (id: number) => (id === 100 ? mockPost : undefined),
-        update: async (id: number, data: any) => ({ ...mockPost, ...data }),
+      const mock_post_repo = {
+        find_by_id: async (id: number) => (id === 100 ? mock_post : undefined),
+        update: async (id: number, data: any) => ({ ...mock_post, ...data }),
       } as unknown as PostRepository;
 
-      const postService = new PostService(mockPostRepo);
+      const post_service_instance = new PostService(mock_post_repo);
 
       expect(
-        postService.updatePost(
+        post_service_instance.update_post(
           100,
           { id: 6, email: "other@example.com", role: "user" },
           { title: "Unauthorized Edit" }
         )
       ).rejects.toThrow("You do not have permission to modify this post");
 
-      const updated = await postService.updatePost(
+      const updated = await post_service_instance.update_post(
         100,
         { id: 5, email: "author@example.com", role: "user" },
         { title: "Author Edit" }
       );
       expect(updated.title).toBe("Author Edit");
 
-      const adminUpdated = await postService.updatePost(
+      const admin_updated = await post_service_instance.update_post(
         100,
         { id: 999, email: "admin@example.com", role: "admin" },
         { title: "Admin Edit" }
       );
-      expect(adminUpdated.title).toBe("Admin Edit");
+      expect(admin_updated.title).toBe("Admin Edit");
     });
   });
 });
@@ -2292,11 +2307,13 @@ bun run docker:run
 ## Step 14: API Reference & Testing with curl
 
 ### 1. Health Check
+
 ```bash
 curl http://localhost:3000/health
 ```
 
 ### 2. Register a New User
+
 ```bash
 curl -X POST http://localhost:3000/api/auth/register \
   -H "Content-Type: application/json" \
@@ -2308,6 +2325,7 @@ curl -X POST http://localhost:3000/api/auth/register \
 ```
 
 ### 3. Login
+
 ```bash
 curl -X POST http://localhost:3000/api/auth/login \
   -H "Content-Type: application/json" \
@@ -2316,15 +2334,18 @@ curl -X POST http://localhost:3000/api/auth/login \
     "password": "password123"
   }'
 ```
+
 *Save the returned `token` string.*
 
 ### 4. Get Current Profile
+
 ```bash
 curl http://localhost:3000/api/auth/me \
   -H "Authorization: Bearer <YOUR_TOKEN>"
 ```
 
 ### 5. Create a Post
+
 ```bash
 curl -X POST http://localhost:3000/api/posts \
   -H "Authorization: Bearer <YOUR_TOKEN>" \
@@ -2337,7 +2358,7 @@ curl -X POST http://localhost:3000/api/posts \
 ```
 
 ### 6. List Posts
+
 ```bash
 curl "http://localhost:3000/api/posts?page=1&limit=10&published=true"
 ```
-
