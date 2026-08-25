@@ -6,10 +6,10 @@ import { cors } from "hono/cors";
 import { trimTrailingSlash } from "hono/trailing-slash";
 import { routes } from "./routes/routes";
 
+export function createApp(): Hono<THonoEnv> {
+  const app = new Hono<THonoEnv>();
 
-export const app = new Hono<THonoEnv>();
-
-  // Global Middlewares
+  //! Global Middlewares
   app.use("*", logger());
   app.use("*", secureHeaders());
   app.use(
@@ -22,13 +22,19 @@ export const app = new Hono<THonoEnv>();
       maxAge: 600,
     })
   );
+  
   app.use("*", trimTrailingSlash());
 
-  // Mount API routes
+  //! Mount API routes
   app.route("/", routes);
 
-  // 404 Not Found Handler
+  //! 404 Not Found Handler
   // app.notFound(notFoundHandler);
 
-  // Global Error Handler
+  //! Global Error Handler
   // app.onError(errorHandler);
+
+  return app;
+}
+
+export const app = createApp();
