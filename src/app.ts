@@ -6,7 +6,7 @@ import { cors } from "hono/cors";
 import { trimTrailingSlash } from "hono/trailing-slash";
 import { routes } from "./routes/routes";
 
-export function createApp(): Hono<THonoEnv> {
+export function create_app(): Hono<THonoEnv> {
   const app = new Hono<THonoEnv>();
 
   //! Global Middlewares
@@ -37,4 +37,4 @@ export function createApp(): Hono<THonoEnv> {
   return app;
 }
 
-export const app = createApp();
+export const app = create_app();
