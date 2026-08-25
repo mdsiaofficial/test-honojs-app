@@ -88,6 +88,7 @@ HTTP Request
 
 Throughout this codebase:
 
+- **Database name, table names & column names**: `snake_case` (e.g. database: `test_honojs_db`, tables: `users`, `posts`, columns: `id`, `name`, `email`, `password_hash`, `author_id`, `created_at`, `updated_at`, etc.)
 - **Custom variables & functions**: `snake_case` (e.g. `create_app`, `handle_shutdown`, `format_zod_error`, `auth_middleware`, `find_by_id`, `get_user_by_id`, `register_schema`, etc.)
 - **Custom types**: `TPascalCase` prefixed with `T` (e.g. `TUserRole`, `THonoEnv`, `TEnv`, `TUser`, `TNewUser`, `TPost`, `TNewPost`, `TRegisterInput`, `TDatabase`, etc.)
 - **Custom interfaces**: `IPascalCase` prefixed with `I` (e.g. `IAuthUser`, `IJWTPayload`, `IApiResponse`, `IPostFindOptions`, `IPostWithAuthor`, `IValidationIssue`, `IValidationErrorLike`)
@@ -212,11 +213,11 @@ Create `.env.example`:
 PORT=3000
 NODE_ENV=development
 
-# Database Configuration (PostgreSQL on local machine)
+# Database Configuration (PostgreSQL database: test_honojs_db)
 # When running locally with Bun:
-DATABASE_URL=postgres://postgres:postgres@localhost:5432/test_hono_db
+DATABASE_URL=postgres://postgres:postgres@localhost:5432/test_honojs_db
 # When running in Docker connecting to host machine PostgreSQL:
-# DATABASE_URL=postgres://postgres:postgres@host.docker.internal:5432/test_hono_db
+# DATABASE_URL=postgres://postgres:postgres@host.docker.internal:5432/test_honojs_db
 
 # Authentication
 JWT_SECRET=super-secret-jwt-key-change-this-in-production
@@ -241,7 +242,7 @@ export default defineConfig({
   out: "./drizzle",
   dialect: "postgresql",
   dbCredentials: {
-    url: process.env.DATABASE_URL || "postgres://postgres:postgres@localhost:5432/test_hono_db",
+    url: process.env.DATABASE_URL || "postgres://postgres:postgres@localhost:5432/test_honojs_db",
   },
   verbose: true,
   strict: true,
@@ -374,7 +375,7 @@ const env_schema = z.object({
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   DATABASE_URL: z
     .string()
-    .default("postgres://postgres:postgres@localhost:5432/test_hono_db"),
+    .default("postgres://postgres:postgres@localhost:5432/test_honojs_db"),
   JWT_SECRET: z.string().min(8).default("default-development-jwt-secret-key-123456789"),
   JWT_EXPIRES_IN: z.string().default("7d"),
 });
@@ -416,10 +417,10 @@ export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 100 }).notNull(),
   email: varchar("email", { length: 255 }).notNull().unique(),
-  passwordHash: varchar("password_hash", { length: 255 }).notNull(),
+  password_hash: varchar("password_hash", { length: 255 }).notNull(),
   role: varchar("role", { length: 20 }).default("user").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const users_relations = relations(users, ({ many }) => ({
@@ -442,16 +443,16 @@ export const posts = pgTable("posts", {
   title: varchar("title", { length: 255 }).notNull(),
   content: text("content").notNull(),
   published: boolean("published").default(false).notNull(),
-  authorId: integer("author_id")
+  author_id: integer("author_id")
     .references(() => users.id, { onDelete: "cascade" })
     .notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const posts_relations = relations(posts, ({ one }) => ({
   author: one(users, {
-    fields: [posts.authorId],
+    fields: [posts.author_id],
     references: [users.id],
   }),
 }));
@@ -524,7 +525,7 @@ export class UserRepository {
       .from(users)
       .limit(limit)
       .offset(offset)
-      .orderBy(desc(users.createdAt));
+      .orderBy(desc(users.created_at));
   }
 
   async count(): Promise<number> {
@@ -548,9 +549,9 @@ export class UserRepository {
   }
 
   async update(id: number, user_data: Partial<TNewUser>): Promise<TUser | undefined> {
-    const values_to_update: Partial<TNewUser> & { updatedAt: Date } = {
+    const values_to_update: Partial<TNewUser> & { updated_at: Date } = {
       ...user_data,
-      updatedAt: new Date(),
+      updated_at: new Date(),
     };
     if (user_data.email) {
       values_to_update.email = user_data.email.toLowerCase();
@@ -609,9 +610,9 @@ export class PostRepository {
         title: posts.title,
         content: posts.content,
         published: posts.published,
-        authorId: posts.authorId,
-        createdAt: posts.createdAt,
-        updatedAt: posts.updatedAt,
+        author_id: posts.author_id,
+        created_at: posts.created_at,
+        updated_at: posts.updated_at,
         author: {
           id: users.id,
           name: users.name,
@@ -619,7 +620,7 @@ export class PostRepository {
         },
       })
       .from(posts)
-      .leftJoin(users, eq(posts.authorId, users.id))
+      .leftJoin(users, eq(posts.author_id, users.id))
       .where(eq(posts.id, id))
       .limit(1);
 
@@ -631,9 +632,9 @@ export class PostRepository {
       title: row.title,
       content: row.content,
       published: row.published,
-      authorId: row.authorId,
-      createdAt: row.createdAt,
-      updatedAt: row.updatedAt,
+      author_id: row.author_id,
+      created_at: row.created_at,
+      updated_at: row.updated_at,
       author: row.author?.id ? row.author : undefined,
     };
   }
@@ -646,7 +647,7 @@ export class PostRepository {
       conditions.push(eq(posts.published, true));
     }
     if (author_id !== undefined) {
-      conditions.push(eq(posts.authorId, author_id));
+      conditions.push(eq(posts.author_id, author_id));
     }
 
     const where_clause = conditions.length > 0 ? and(...conditions) : undefined;
@@ -657,9 +658,9 @@ export class PostRepository {
         title: posts.title,
         content: posts.content,
         published: posts.published,
-        authorId: posts.authorId,
-        createdAt: posts.createdAt,
-        updatedAt: posts.updatedAt,
+        author_id: posts.author_id,
+        created_at: posts.created_at,
+        updated_at: posts.updated_at,
         author: {
           id: users.id,
           name: users.name,
@@ -667,11 +668,11 @@ export class PostRepository {
         },
       })
       .from(posts)
-      .leftJoin(users, eq(posts.authorId, users.id))
+      .leftJoin(users, eq(posts.author_id, users.id))
       .where(where_clause)
       .limit(limit)
       .offset(offset)
-      .orderBy(desc(posts.createdAt));
+      .orderBy(desc(posts.created_at));
 
     const rows = await query;
     return rows.map((row) => ({
@@ -679,9 +680,9 @@ export class PostRepository {
       title: row.title,
       content: row.content,
       published: row.published,
-      authorId: row.authorId,
-      createdAt: row.createdAt,
-      updatedAt: row.updatedAt,
+      author_id: row.author_id,
+      created_at: row.created_at,
+      updated_at: row.updated_at,
       author: row.author?.id ? row.author : undefined,
     }));
   }
@@ -694,7 +695,7 @@ export class PostRepository {
       conditions.push(eq(posts.published, true));
     }
     if (author_id !== undefined) {
-      conditions.push(eq(posts.authorId, author_id));
+      conditions.push(eq(posts.author_id, author_id));
     }
 
     const where_clause = conditions.length > 0 ? and(...conditions) : undefined;
@@ -721,7 +722,7 @@ export class PostRepository {
       .update(posts)
       .set({
         ...post_data,
-        updatedAt: new Date(),
+        updated_at: new Date(),
       })
       .where(eq(posts.id, id))
       .returning();
@@ -819,7 +820,7 @@ export const post_query_schema = z.object({
     .enum(["true", "false"])
     .transform((val) => val === "true")
     .optional(),
-  authorId: z.coerce.number().int().positive().optional(),
+  author_id: z.coerce.number().int().positive().optional(),
 });
 
 export type TCreatePostInput = z.infer<typeof create_post_schema>;
@@ -1028,7 +1029,7 @@ import type { TUser } from "../db/schema/users";
 export class AuthService {
   constructor(private readonly user_repo: UserRepository = user_repository) {}
 
-  async register(input: TRegisterInput): Promise<{ user: Omit<TUser, "passwordHash">; token: string }> {
+  async register(input: TRegisterInput): Promise<{ user: Omit<TUser, "password_hash">; token: string }> {
     const existing_user = await this.user_repo.find_by_email(input.email);
     if (existing_user) {
       throw new AppError("A user with this email already exists", 409);
@@ -1043,7 +1044,7 @@ export class AuthService {
     const user = await this.user_repo.create({
       name: input.name,
       email: input.email,
-      passwordHash: password_hash,
+      password_hash: password_hash,
       role: input.role || "user",
     });
 
@@ -1055,20 +1056,20 @@ export class AuthService {
 
     const token = await this.generate_token(auth_user);
 
-    const { passwordHash: _, ...sanitized_user } = user;
+    const { password_hash: _, ...sanitized_user } = user;
     return {
       user: sanitized_user,
       token,
     };
   }
 
-  async login(input: TLoginInput): Promise<{ user: Omit<TUser, "passwordHash">; token: string }> {
+  async login(input: TLoginInput): Promise<{ user: Omit<TUser, "password_hash">; token: string }> {
     const user = await this.user_repo.find_by_email(input.email);
     if (!user) {
       throw new AppError("Invalid email or password", 401);
     }
 
-    const is_valid_password = await Bun.password.verify(input.password, user.passwordHash);
+    const is_valid_password = await Bun.password.verify(input.password, user.password_hash);
     if (!is_valid_password) {
       throw new AppError("Invalid email or password", 401);
     }
@@ -1081,7 +1082,7 @@ export class AuthService {
 
     const token = await this.generate_token(auth_user);
 
-    const { passwordHash: _, ...sanitized_user } = user;
+    const { password_hash: _, ...sanitized_user } = user;
     return {
       user: sanitized_user,
       token,
@@ -1109,12 +1110,12 @@ export class AuthService {
     }
   }
 
-  async get_me(user_id: number): Promise<Omit<TUser, "passwordHash">> {
+  async get_me(user_id: number): Promise<Omit<TUser, "password_hash">> {
     const user = await this.user_repo.find_by_id(user_id);
     if (!user) {
       throw new AppError("User not found", 404);
     }
-    const { passwordHash: _, ...sanitized_user } = user;
+    const { password_hash: _, ...sanitized_user } = user;
     return sanitized_user;
   }
 }
@@ -1134,12 +1135,12 @@ import type { TUser, TNewUser } from "../db/schema/users";
 export class UserService {
   constructor(private readonly user_repo: UserRepository = user_repository) {}
 
-  private sanitize_user(user: TUser): Omit<TUser, "passwordHash"> {
-    const { passwordHash: _, ...sanitized } = user;
+  private sanitize_user(user: TUser): Omit<TUser, "password_hash"> {
+    const { password_hash: _, ...sanitized } = user;
     return sanitized;
   }
 
-  async get_user_by_id(id: number): Promise<Omit<TUser, "passwordHash">> {
+  async get_user_by_id(id: number): Promise<Omit<TUser, "password_hash">> {
     const user = await this.user_repo.find_by_id(id);
     if (!user) {
       throw new AppError("User not found", 404);
@@ -1148,7 +1149,7 @@ export class UserService {
   }
 
   async get_all_users(page: number = 1, limit: number = 10): Promise<{
-    users: Omit<TUser, "passwordHash">[];
+    users: Omit<TUser, "password_hash">[];
     meta: { page: number; limit: number; total: number; totalPages: number };
   }> {
     const offset = (page - 1) * limit;
@@ -1172,7 +1173,7 @@ export class UserService {
     id: number,
     input: TUpdateUserInput,
     requesting_user: IAuthUser
-  ): Promise<Omit<TUser, "passwordHash">> {
+  ): Promise<Omit<TUser, "password_hash">> {
     // Only allow updating own profile unless admin
     if (requesting_user.id !== id && requesting_user.role !== "admin") {
       throw new AppError("You do not have permission to update this user", 403);
@@ -1196,7 +1197,7 @@ export class UserService {
     if (input.role && requesting_user.role === "admin") update_data.role = input.role;
 
     if (input.password) {
-      update_data.passwordHash = await Bun.password.hash(input.password, {
+      update_data.password_hash = await Bun.password.hash(input.password, {
         algorithm: "bcrypt",
         cost: 10,
       });
@@ -1255,19 +1256,19 @@ export class PostService {
     posts: IPostWithAuthor[];
     meta: { page: number; limit: number; total: number; totalPages: number };
   }> {
-    const { page = 1, limit = 10, published, authorId } = query;
+    const { page = 1, limit = 10, published, author_id } = query;
     const offset = (page - 1) * limit;
 
     const [post_list, total] = await Promise.all([
       this.post_repo.find_all({
         published_only: published,
-        author_id: authorId,
+        author_id: author_id,
         limit,
         offset,
       }),
       this.post_repo.count({
         published_only: published,
-        author_id: authorId,
+        author_id: author_id,
       }),
     ]);
 
@@ -1287,7 +1288,7 @@ export class PostService {
       title: input.title,
       content: input.content,
       published: input.published ?? false,
-      authorId: author_id,
+      author_id: author_id,
     });
   }
 
@@ -1302,7 +1303,7 @@ export class PostService {
     }
 
     // Only the author or an admin can update the post
-    if (existing.authorId !== requesting_user.id && requesting_user.role !== "admin") {
+    if (existing.author_id !== requesting_user.id && requesting_user.role !== "admin") {
       throw new AppError("You do not have permission to modify this post", 403);
     }
 
@@ -1321,7 +1322,7 @@ export class PostService {
     }
 
     // Only the author or an admin can delete the post
-    if (existing.authorId !== requesting_user.id && requesting_user.role !== "admin") {
+    if (existing.author_id !== requesting_user.id && requesting_user.role !== "admin") {
       throw new AppError("You do not have permission to delete this post", 403);
     }
 
@@ -2063,10 +2064,10 @@ describe("Service Layer Unit Tests", () => {
             id: mock_users.length + 1,
             name: data.name,
             email: data.email,
-            passwordHash: data.passwordHash,
+            password_hash: data.password_hash,
             role: data.role || "user",
-            createdAt: new Date(),
-            updatedAt: new Date(),
+            created_at: new Date(),
+            updated_at: new Date(),
           };
           mock_users.push(user);
           return user;
@@ -2083,7 +2084,7 @@ describe("Service Layer Unit Tests", () => {
 
       expect(result.user.id).toBe(1);
       expect(result.user.email).toBe("test@example.com");
-      expect((result.user as any).passwordHash).toBeUndefined();
+      expect((result.user as any).password_hash).toBeUndefined();
       expect(typeof result.token).toBe("string");
 
       const payload = await auth_service_instance.verify_token(result.token);
@@ -2102,10 +2103,10 @@ describe("Service Layer Unit Tests", () => {
           id: 10,
           name: "Existing User",
           email: "existing@example.com",
-          passwordHash: password_hash,
+          password_hash: password_hash,
           role: "user",
-          createdAt: new Date(),
-          updatedAt: new Date(),
+          created_at: new Date(),
+          updated_at: new Date(),
         },
       ];
 
@@ -2140,10 +2141,10 @@ describe("Service Layer Unit Tests", () => {
           id,
           name: "Other User",
           email: "other@example.com",
-          passwordHash: "hash",
+          password_hash: "hash",
           role: "user",
-          createdAt: new Date(),
-          updatedAt: new Date(),
+          created_at: new Date(),
+          updated_at: new Date(),
         }),
       } as unknown as UserRepository;
 
@@ -2166,9 +2167,9 @@ describe("Service Layer Unit Tests", () => {
         title: "Original Title",
         content: "Original Content",
         published: false,
-        authorId: 5,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        author_id: 5,
+        created_at: new Date(),
+        updated_at: new Date(),
       };
 
       const mock_post_repo = {
