@@ -21,10 +21,10 @@ This guide contains everything you need to build this entire production-ready Ty
 7. [Step 4: Environment Config Parser](#step-4-environment-config-parser)
    - [src/config/env.ts](#srcconfigenvts)
 8. [Step 5: Database Connection & Drizzle Schemas](#step-5-database-connection--drizzle-schemas)
-   - [src/db/schema/users.ts](#srcdbschemausersts)
-   - [src/db/schema/posts.ts](#srcdbschemapoststs)
-   - [src/db/schema/index.ts](#srcdbschemaindexts)
-   - [src/db/index.ts](#srcdbindexts)
+   - [src/schema/users.ts](#srcdbschemausersts)
+   - [src/schema/posts.ts](#srcdbschemapoststs)
+   - [src/schema/index.ts](#srcdbschemaindexts)
+   - [src/schema/index.ts](#srcdbindexts)
 9. [Step 6: Repositories Layer (Data Access)](#step-6-repositories-layer-data-access)
    - [src/repositories/user.repository.ts](#srcrepositoriesuserrepositoryts)
    - [src/repositories/post.repository.ts](#srcrepositoriespostrepositoryts)
@@ -129,7 +129,7 @@ bun add -d drizzle-kit @types/bun
 Create the directory structure:
 
 ```bash
-mkdir -p src/config src/db/schema src/repositories src/services src/routes src/middlewares src/validators src/types tests drizzle
+mkdir -p src/config src/schema src/repositories src/services src/routes src/middlewares src/validators src/types tests drizzle
 ```
 
 ---
@@ -238,7 +238,7 @@ Create `drizzle.config.ts`:
 import { defineConfig } from "drizzle-kit";
 
 export default defineConfig({
-  schema: "./src/db/schema/index.ts",
+  schema: "./src/schema/index.ts",
   out: "./drizzle",
   dialect: "postgresql",
   dbCredentials: {
@@ -406,7 +406,7 @@ export const env: TEnv = parsed_env.success
 
 ## Step 5: Database Connection & Drizzle Schemas
 
-### `src/db/schema/users.ts`
+### `src/schema/users.ts`
 
 ```typescript
 import { pgTable, serial, varchar, timestamp } from "drizzle-orm/pg-core";
@@ -431,7 +431,7 @@ export type TUser = typeof users.$inferSelect;
 export type TNewUser = typeof users.$inferInsert;
 ```
 
-### `src/db/schema/posts.ts`
+### `src/schema/posts.ts`
 
 ```typescript
 import { pgTable, serial, varchar, text, boolean, integer, timestamp } from "drizzle-orm/pg-core";
@@ -461,19 +461,19 @@ export type TPost = typeof posts.$inferSelect;
 export type TNewPost = typeof posts.$inferInsert;
 ```
 
-### `src/db/schema/index.ts`
+### `src/schema/index.ts`
 
 ```typescript
 export * from "./users";
 export * from "./posts";
 ```
 
-### `src/db/index.ts`
+### `src/config/db.ts`
 
 ```typescript
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import * as schema from "./schema";
+import * as schema from "../schema";
 import { env } from "../config/env";
 
 export const query_client = postgres(env.DATABASE_URL, {
@@ -496,7 +496,7 @@ export { schema };
 ```typescript
 import { eq, desc, count } from "drizzle-orm";
 import { db, type TDatabase } from "../db";
-import { users, type TUser, type TNewUser } from "../db/schema/users";
+import { users, type TUser, type TNewUser } from "../schema/users";
 
 export class UserRepository {
   constructor(private readonly database: TDatabase = db) {}
@@ -582,8 +582,8 @@ export const user_repository = new UserRepository();
 ```typescript
 import { eq, and, desc, count } from "drizzle-orm";
 import { db, type TDatabase } from "../db";
-import { posts, type TPost, type TNewPost } from "../db/schema/posts";
-import { users } from "../db/schema/users";
+import { posts, type TPost, type TNewPost } from "../schema/posts";
+import { users } from "../schema/users";
 
 export interface IPostFindOptions {
   published_only?: boolean;
@@ -1024,7 +1024,7 @@ import { AppError } from "../middlewares/error.middleware";
 import { env } from "../config/env";
 import type { TRegisterInput, TLoginInput } from "../validators/auth.validator";
 import type { IAuthUser, IJWTPayload } from "../types";
-import type { TUser } from "../db/schema/users";
+import type { TUser } from "../schema/users";
 
 export class AuthService {
   constructor(private readonly user_repo: UserRepository = user_repository) {}
@@ -1130,7 +1130,7 @@ import { user_repository, UserRepository } from "../repositories/user.repository
 import { AppError } from "../middlewares/error.middleware";
 import type { TUpdateUserInput } from "../validators/user.validator";
 import type { IAuthUser } from "../types";
-import type { TUser, TNewUser } from "../db/schema/users";
+import type { TUser, TNewUser } from "../schema/users";
 
 export class UserService {
   constructor(private readonly user_repo: UserRepository = user_repository) {}
@@ -1239,7 +1239,7 @@ import { post_repository, PostRepository, type IPostWithAuthor } from "../reposi
 import { AppError } from "../middlewares/error.middleware";
 import type { TCreatePostInput, TUpdatePostInput, TPostQueryInput } from "../validators/post.validator";
 import type { IAuthUser } from "../types";
-import type { TPost } from "../db/schema/posts";
+import type { TPost } from "../schema/posts";
 
 export class PostService {
   constructor(private readonly post_repo: PostRepository = post_repository) {}
@@ -2049,8 +2049,8 @@ import { UserService } from "../src/services/user.service";
 import { PostService } from "../src/services/post.service";
 import { UserRepository } from "../src/repositories/user.repository";
 import { PostRepository } from "../src/repositories/post.repository";
-import type { TUser } from "../src/db/schema/users";
-import type { TPost } from "../src/db/schema/posts";
+import type { TUser } from "../src/schema/users";
+import type { TPost } from "../src/schema/posts";
 
 describe("Service Layer Unit Tests", () => {
   describe("AuthService", () => {
