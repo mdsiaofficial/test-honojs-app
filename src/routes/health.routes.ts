@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { env } from "../config/env";
 
 export const health_routes = new Hono();
 
@@ -13,6 +14,6 @@ health_routes.get("/", (c) => {
       name: "Bun",
       version: Bun.version,
     },
-    environment: process.env.NODE_ENV || "development",
+    environment: env.NODE_ENV || "development",
   });
 });
