@@ -155,7 +155,7 @@ Create or replace `package.json`:
     "db:studio": "drizzle-kit studio",
     "test": "bun test",
     "docker:build": "docker build -t test-honojs-app .",
-    "docker:run": "docker run -p 3000:3000 --env-file .env --add-host=host.docker.internal:host-gateway test-honojs-app"
+    "docker:run": "docker run -p 5000:5000 --env-file .env --add-host=host.docker.internal:host-gateway test-honojs-app"
   },
   "devDependencies": {
     "@types/bun": "^1.4.0",
@@ -210,7 +210,7 @@ Create `.env.example`:
 
 ```env
 # Server Configuration
-PORT=3000
+PORT=5000
 NODE_ENV=development
 
 # Database Configuration (PostgreSQL database: test_honojs_db)
@@ -299,7 +299,7 @@ FROM base AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
-ENV PORT=3000
+ENV PORT=5000
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY package.json ./
@@ -309,10 +309,10 @@ COPY drizzle.config.ts ./
 COPY tsconfig.json ./
 
 USER bun
-EXPOSE 3000
+EXPOSE 5000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1
+  CMD wget --no-verbose --tries=1 --spider http://localhost:5000/health || exit 1
 
 CMD ["bun", "run", "src/server.ts"]
 ```
@@ -371,7 +371,7 @@ export type THonoEnv = {
 import { z } from "zod";
 
 const env_schema = z.object({
-  PORT: z.coerce.number().default(3000),
+  PORT: z.coerce.number().default(5000),
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   DATABASE_URL: z
     .string()
@@ -2309,13 +2309,13 @@ bun run docker:run
 ### 1. Health Check
 
 ```bash
-curl http://localhost:3000/health
+curl http://localhost:5000/health
 ```
 
 ### 2. Register a New User
 
 ```bash
-curl -X POST http://localhost:3000/api/auth/register \
+curl -X POST http://localhost:5000/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Jane Doe",
@@ -2327,7 +2327,7 @@ curl -X POST http://localhost:3000/api/auth/register \
 ### 3. Login
 
 ```bash
-curl -X POST http://localhost:3000/api/auth/login \
+curl -X POST http://localhost:5000/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "jane@example.com",
@@ -2340,14 +2340,14 @@ curl -X POST http://localhost:3000/api/auth/login \
 ### 4. Get Current Profile
 
 ```bash
-curl http://localhost:3000/api/auth/me \
+curl http://localhost:5000/api/auth/me \
   -H "Authorization: Bearer <YOUR_TOKEN>"
 ```
 
 ### 5. Create a Post
 
 ```bash
-curl -X POST http://localhost:3000/api/posts \
+curl -X POST http://localhost:5000/api/posts \
   -H "Authorization: Bearer <YOUR_TOKEN>" \
   -H "Content-Type: application/json" \
   -d '{
@@ -2360,5 +2360,5 @@ curl -X POST http://localhost:3000/api/posts \
 ### 6. List Posts
 
 ```bash
-curl "http://localhost:3000/api/posts?page=1&limit=10&published=true"
+curl "http://localhost:5000/api/posts?page=1&limit=10&published=true"
 ```

@@ -5,9 +5,9 @@ import type { THonoEnv } from "../types/types";
 export const routes = new Hono<THonoEnv>();
 
 routes.get("/", (c) => {
-  console.log(c.req.url)
+  // console.log(c.req.url)
   const { origin } = new URL(c.req.url);
-  console.log(origin);
+  // console.log(origin);
   return c.json({
     name: "Bun + Hono + Drizzle API",
     version: "1.0.0",

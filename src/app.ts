@@ -4,7 +4,7 @@ import { logger } from "hono/logger";
 import { secureHeaders } from "hono/secure-headers";
 import { cors } from "hono/cors";
 import { trimTrailingSlash } from "hono/trailing-slash";
-import { routes } from "./routes/routes";
+import { routes } from "./routes";
 
 export function create_app(): Hono<THonoEnv> {
   const app = new Hono<THonoEnv>();
