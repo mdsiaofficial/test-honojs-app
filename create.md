@@ -24,7 +24,7 @@ This guide contains everything you need to build this entire production-ready Ty
    - [src/schema/users.ts](#srcdbschemausersts)
    - [src/schema/posts.ts](#srcdbschemapoststs)
    - [src/schema/index.ts](#srcdbschemaindexts)
-   - [src/schema/index.ts](#srcdbindexts)
+   - [src/config/db.ts](#srcconfigdbts)
 9. [Step 6: Repositories Layer (Data Access)](#step-6-repositories-layer-data-access)
    - [src/repositories/user.repository.ts](#srcrepositoriesuserrepositoryts)
    - [src/repositories/post.repository.ts](#srcrepositoriespostrepositoryts)
@@ -36,26 +36,32 @@ This guide contains everything you need to build this entire production-ready Ty
 11. [Step 8: Middlewares & Error Handling](#step-8-middlewares--error-handling)
     - [src/middlewares/error.middleware.ts](#srcmiddlewareserrormiddlewarets)
     - [src/middlewares/auth.middleware.ts](#srcmiddlewaresauthmiddlewarets)
-12. [Step 9: Services Layer (Business Logic)](#step-9-services-layer-business-logic)
+12. [Step 9: Utilities](#step-9-utilities)
+    - [src/utils/async_handler.ts](#srcutilsasync_handlerts)
+13. [Step 10: Services Layer (Business Logic)](#step-10-services-layer-business-logic)
     - [src/services/auth.service.ts](#srcservicesauthservicets)
     - [src/services/user.service.ts](#srcservicesuserservicets)
     - [src/services/post.service.ts](#srcservicespostservicets)
-13. [Step 10: Routes Layer (Controllers / HTTP)](#step-10-routes-layer-controllers--http)
+14. [Step 11: Controllers Layer](#step-11-controllers-layer)
+    - [src/controllers/auth.controller.ts](#srccontrollersauthcontrollerts)
+    - [src/controllers/user.controller.ts](#srccontrollersusercontrollerts)
+    - [src/controllers/post.controller.ts](#srccontrollerspostcontrollerts)
+15. [Step 12: Routes Layer (HTTP)](#step-12-routes-layer-http)
     - [src/routes/health.routes.ts](#srcrouteshealthroutests)
     - [src/routes/auth.routes.ts](#srcroutesauthroutests)
     - [src/routes/user.routes.ts](#srcroutesuserroutests)
     - [src/routes/post.routes.ts](#srcroutespostroutests)
     - [src/routes/index.ts](#srcroutesindexts)
-14. [Step 11: App Factory & Server Bootstrap](#step-11-app-factory--server-bootstrap)
+16. [Step 13: App Factory & Server Bootstrap](#step-13-app-factory--server-bootstrap)
     - [src/app.ts](#srcappts)
     - [src/server.ts](#srcserverts)
-15. [Step 12: Automated Testing Suite](#step-12-automated-testing-suite)
+17. [Step 14: Automated Testing Suite](#step-14-automated-testing-suite)
     - [tests/health.test.ts](#testshealthtestts)
     - [tests/validators.test.ts](#testsvalidatorstestts)
     - [tests/services.test.ts](#testsservicestestts)
     - [tests/auth.test.ts](#testsauthtestts)
-16. [Step 13: Migrations, Running & Testing](#step-13-migrations-running--testing)
-17. [Step 14: API Reference & Testing with curl](#step-14-api-reference--testing-with-curl)
+17. [Step 14: Migrations, Running & Testing](#step-14-migrations-running--testing)
+18. [Step 15: API Reference & Testing with curl](#step-15-api-reference--testing-with-curl)
 
 ---
 
@@ -70,7 +76,10 @@ HTTP Request
 [ Middlewares ] ──────── (CORS, Logger, Secure Headers, JWT Authentication)
      │
      ▼
-[ Routes / Controllers ] ─ (Hono route definitions, Zod validation with @hono/zod-validator)
+[ Routes ] ──────────── (Hono route definitions, delegate to Controllers)
+     │
+     ▼
+[ Controllers ] ─────── (Request/Response handling, delegate to Services)
      │
      ▼
 [ Services ] ─────────── (Business logic, password hashing via Bun.password, authorization)
@@ -88,7 +97,7 @@ HTTP Request
 
 Throughout this codebase:
 
-- **Database name, table names & column names**: `snake_case` (e.g. database: `test_honojs_db`, tables: `users`, `posts`, columns: `id`, `name`, `email`, `password_hash`, `author_id`, `created_at`, `updated_at`, etc.)
+- **Database name, table names & column names**: `snake_case` (e.g. database: `test_honojs_db`, tables: `users`, `posts`, columns: `id`, `name`, `email`, `password`, `author_id`, `created_at`, `updated_at`, etc.)
 - **Custom variables & functions**: `snake_case` (e.g. `create_app`, `handle_shutdown`, `format_zod_error`, `auth_middleware`, `find_by_id`, `get_user_by_id`, `register_schema`, etc.)
 - **Custom types**: `TPascalCase` prefixed with `T` (e.g. `TUserRole`, `THonoEnv`, `TEnv`, `TUser`, `TNewUser`, `TPost`, `TNewPost`, `TRegisterInput`, `TDatabase`, etc.)
 - **Custom interfaces**: `IPascalCase` prefixed with `I` (e.g. `IAuthUser`, `IJWTPayload`, `IApiResponse`, `IPostFindOptions`, `IPostWithAuthor`, `IValidationIssue`, `IValidationErrorLike`)
@@ -129,7 +138,7 @@ bun add -d drizzle-kit @types/bun
 Create the directory structure:
 
 ```bash
-mkdir -p src/config src/schema src/repositories src/services src/routes src/middlewares src/validators src/types tests drizzle
+mkdir -p src/config src/schema src/repositories src/services src/controllers src/routes src/middlewares src/validators src/types src/utils src/drizzle tests
 ```
 
 ---
@@ -239,10 +248,10 @@ import { defineConfig } from "drizzle-kit";
 
 export default defineConfig({
   schema: "./src/schema/index.ts",
-  out: "./drizzle",
+  out: "./src/drizzle",
   dialect: "postgresql",
   dbCredentials: {
-    url: process.env.DATABASE_URL || "postgres://postgres:postgres@localhost:5432/test_honojs_db",
+    url: process.env.DATABASE_URL || "postgres://test_honojs_db:test_honojs_db@localhost:5432/test_honojs_db",
   },
   verbose: true,
   strict: true,
@@ -277,24 +286,14 @@ create.md
 Create `Dockerfile`:
 
 ```dockerfile
-# ==========================================
-# 1. Base stage with Bun 1.4.0 on Alpine Linux
-# ==========================================
 FROM oven/bun:1.4.0-alpine AS base
 WORKDIR /app
 
-# ==========================================
-# 2. Dependencies installation stage
-# ==========================================
 FROM base AS deps
 WORKDIR /app
-
 COPY package.json bun.lock* ./
 RUN bun install --frozen-lockfile --production
 
-# ==========================================
-# 3. Production runner stage
-# ==========================================
 FROM base AS runner
 WORKDIR /app
 
@@ -304,16 +303,18 @@ ENV PORT=5000
 COPY --from=deps /app/node_modules ./node_modules
 COPY package.json ./
 COPY src ./src
-COPY drizzle ./drizzle
 COPY drizzle.config.ts ./
 COPY tsconfig.json ./
+COPY .env.example .env
 
-USER bun
 EXPOSE 5000
+
+RUN apk add --no-cache wget && addgroup -S appgroup && adduser -S appuser -G appgroup
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:5000/health || exit 1
 
+USER appuser
 CMD ["bun", "run", "src/server.ts"]
 ```
 
@@ -417,7 +418,7 @@ export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 100 }).notNull(),
   email: varchar("email", { length: 255 }).notNull().unique(),
-  password_hash: varchar("password_hash", { length: 255 }).notNull(),
+  password: varchar("password", { length: 255 }).notNull(),
   role: varchar("role", { length: 20 }).default("user").notNull(),
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
@@ -495,7 +496,7 @@ export { schema };
 
 ```typescript
 import { eq, desc, count } from "drizzle-orm";
-import { db, type TDatabase } from "../db";
+import { db, type TDatabase } from "../config/db";
 import { users, type TUser, type TNewUser } from "../schema/users";
 
 export class UserRepository {
@@ -581,7 +582,7 @@ export const user_repository = new UserRepository();
 
 ```typescript
 import { eq, and, desc, count } from "drizzle-orm";
-import { db, type TDatabase } from "../db";
+import { db, type TDatabase } from "../config/db";
 import { posts, type TPost, type TNewPost } from "../schema/posts";
 import { users } from "../schema/users";
 
@@ -1013,7 +1014,25 @@ export const require_role = (...roles: TUserRole[]): MiddlewareHandler<THonoEnv>
 
 ---
 
-## Step 9: Services Layer (Business Logic)
+## Step 9: Utilities
+
+### `src/utils/async_handler.ts`
+
+```typescript
+import type { Context, Next } from "hono";
+
+type AsyncHandler = (c: Context, next: Next) => Promise<Response>;
+
+export function async_handler(handler: (c: Context) => Promise<Response>): AsyncHandler {
+  return async (c: Context, _next: Next) => {
+    return await handler(c);
+  };
+}
+```
+
+---
+
+## Step 10: Services Layer (Business Logic)
 
 ### `src/services/auth.service.ts`
 
@@ -1029,13 +1048,12 @@ import type { TUser } from "../schema/users";
 export class AuthService {
   constructor(private readonly user_repo: UserRepository = user_repository) {}
 
-  async register(input: TRegisterInput): Promise<{ user: Omit<TUser, "password_hash">; token: string }> {
+  async register(input: TRegisterInput): Promise<{ user: Omit<TUser, "password">; token: string }> {
     const existing_user = await this.user_repo.find_by_email(input.email);
     if (existing_user) {
       throw new AppError("A user with this email already exists", 409);
     }
 
-    // Native Bun password hashing (Bcrypt)
     const password_hash = await Bun.password.hash(input.password, {
       algorithm: "bcrypt",
       cost: 10,
@@ -1044,7 +1062,7 @@ export class AuthService {
     const user = await this.user_repo.create({
       name: input.name,
       email: input.email,
-      password_hash: password_hash,
+      password: password_hash,
       role: input.role || "user",
     });
 
@@ -1056,20 +1074,20 @@ export class AuthService {
 
     const token = await this.generate_token(auth_user);
 
-    const { password_hash: _, ...sanitized_user } = user;
+    const { password: _, ...sanitized_user } = user;
     return {
       user: sanitized_user,
       token,
     };
   }
 
-  async login(input: TLoginInput): Promise<{ user: Omit<TUser, "password_hash">; token: string }> {
+  async login(input: TLoginInput): Promise<{ user: Omit<TUser, "password">; token: string }> {
     const user = await this.user_repo.find_by_email(input.email);
     if (!user) {
       throw new AppError("Invalid email or password", 401);
     }
 
-    const is_valid_password = await Bun.password.verify(input.password, user.password_hash);
+    const is_valid_password = await Bun.password.verify(input.password, user.password);
     if (!is_valid_password) {
       throw new AppError("Invalid email or password", 401);
     }
@@ -1082,7 +1100,7 @@ export class AuthService {
 
     const token = await this.generate_token(auth_user);
 
-    const { password_hash: _, ...sanitized_user } = user;
+    const { password: _, ...sanitized_user } = user;
     return {
       user: sanitized_user,
       token,
@@ -1094,7 +1112,7 @@ export class AuthService {
       id: user.id,
       email: user.email,
       role: user.role,
-      exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7, // 7 days
+      exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7,
       iat: Math.floor(Date.now() / 1000),
     };
 
@@ -1110,12 +1128,12 @@ export class AuthService {
     }
   }
 
-  async get_me(user_id: number): Promise<Omit<TUser, "password_hash">> {
+  async get_me(user_id: number): Promise<Omit<TUser, "password">> {
     const user = await this.user_repo.find_by_id(user_id);
     if (!user) {
       throw new AppError("User not found", 404);
     }
-    const { password_hash: _, ...sanitized_user } = user;
+    const { password: _, ...sanitized_user } = user;
     return sanitized_user;
   }
 }
@@ -1135,12 +1153,12 @@ import type { TUser, TNewUser } from "../schema/users";
 export class UserService {
   constructor(private readonly user_repo: UserRepository = user_repository) {}
 
-  private sanitize_user(user: TUser): Omit<TUser, "password_hash"> {
-    const { password_hash: _, ...sanitized } = user;
+  private sanitize_user(user: TUser): Omit<TUser, "password"> {
+    const { password: _, ...sanitized } = user;
     return sanitized;
   }
 
-  async get_user_by_id(id: number): Promise<Omit<TUser, "password_hash">> {
+  async get_user_by_id(id: number): Promise<Omit<TUser, "password">> {
     const user = await this.user_repo.find_by_id(id);
     if (!user) {
       throw new AppError("User not found", 404);
@@ -1149,7 +1167,7 @@ export class UserService {
   }
 
   async get_all_users(page: number = 1, limit: number = 10): Promise<{
-    users: Omit<TUser, "password_hash">[];
+    users: Omit<TUser, "password">[];
     meta: { page: number; limit: number; total: number; totalPages: number };
   }> {
     const offset = (page - 1) * limit;
@@ -1173,8 +1191,7 @@ export class UserService {
     id: number,
     input: TUpdateUserInput,
     requesting_user: IAuthUser
-  ): Promise<Omit<TUser, "password_hash">> {
-    // Only allow updating own profile unless admin
+  ): Promise<Omit<TUser, "password">> {
     if (requesting_user.id !== id && requesting_user.role !== "admin") {
       throw new AppError("You do not have permission to update this user", 403);
     }
@@ -1197,7 +1214,7 @@ export class UserService {
     if (input.role && requesting_user.role === "admin") update_data.role = input.role;
 
     if (input.password) {
-      update_data.password_hash = await Bun.password.hash(input.password, {
+      update_data.password = await Bun.password.hash(input.password, {
         algorithm: "bcrypt",
         cost: 10,
       });
@@ -1212,7 +1229,6 @@ export class UserService {
   }
 
   async delete_user(id: number, requesting_user: IAuthUser): Promise<void> {
-    // Only allow self deletion or admin deletion
     if (requesting_user.id !== id && requesting_user.role !== "admin") {
       throw new AppError("You do not have permission to delete this user", 403);
     }
@@ -1302,7 +1318,6 @@ export class PostService {
       throw new AppError("Post not found", 404);
     }
 
-    // Only the author or an admin can update the post
     if (existing.author_id !== requesting_user.id && requesting_user.role !== "admin") {
       throw new AppError("You do not have permission to modify this post", 403);
     }
@@ -1321,7 +1336,6 @@ export class PostService {
       throw new AppError("Post not found", 404);
     }
 
-    // Only the author or an admin can delete the post
     if (existing.author_id !== requesting_user.id && requesting_user.role !== "admin") {
       throw new AppError("You do not have permission to delete this post", 403);
     }
@@ -1338,7 +1352,198 @@ export const post_service = new PostService();
 
 ---
 
-## Step 10: Routes Layer (Controllers / HTTP)
+## Step 11: Controllers Layer
+
+### `src/controllers/auth.controller.ts`
+
+```typescript
+import type { Context } from "hono";
+import { auth_service } from "../services/auth.service";
+import { async_handler } from "../utils/async_handler";
+import type { TRegisterInput, TLoginInput } from "../validators/auth.validator";
+import type { IAuthUser } from "../types";
+
+export class AuthController {
+  register = async_handler(async (c: Context) => {
+    const body = c.req.valid("json") as TRegisterInput;
+    const result = await auth_service.register(body);
+
+    return c.json(
+      {
+        success: true,
+        message: "User registered successfully",
+        data: result,
+      },
+      201
+    );
+  });
+
+  login = async_handler(async (c: Context) => {
+    const body = c.req.valid("json") as TLoginInput;
+    const result = await auth_service.login(body);
+
+    return c.json({
+      success: true,
+      message: "Login successful",
+      data: result,
+    });
+  });
+
+  me = async_handler(async (c: Context) => {
+    const user = c.get("user") as IAuthUser;
+    const profile = await auth_service.get_me(user.id);
+
+    return c.json({
+      success: true,
+      data: profile,
+    });
+  });
+}
+
+export const auth_controller = new AuthController();
+```
+
+### `src/controllers/user.controller.ts`
+
+```typescript
+import type { Context } from "hono";
+import { user_service } from "../services/user.service";
+import { async_handler } from "../utils/async_handler";
+import type { TUpdateUserInput, TUserQueryInput } from "../validators/user.validator";
+import type { IAuthUser } from "../types";
+
+export class UserController {
+  get_all = async_handler(async (c: Context) => {
+    const { page, limit } = c.req.valid("query") as TUserQueryInput;
+    const result = await user_service.get_all_users(page, limit);
+
+    return c.json({
+      success: true,
+      data: result.users,
+      meta: result.meta,
+    });
+  });
+
+  get_one = async_handler(async (c: Context) => {
+    const { id } = c.req.valid("param") as { id: number };
+    const user = await user_service.get_user_by_id(id);
+
+    return c.json({
+      success: true,
+      data: user,
+    });
+  });
+
+  update = async_handler(async (c: Context) => {
+    const { id } = c.req.valid("param") as { id: number };
+    const body = c.req.valid("json") as TUpdateUserInput;
+    const requesting_user = c.get("user") as IAuthUser;
+
+    const updated_user = await user_service.update_user(id, body, requesting_user);
+
+    return c.json({
+      success: true,
+      message: "User updated successfully",
+      data: updated_user,
+    });
+  });
+
+  delete = async_handler(async (c: Context) => {
+    const { id } = c.req.valid("param") as { id: number };
+    const requesting_user = c.get("user") as IAuthUser;
+
+    await user_service.delete_user(id, requesting_user);
+
+    return c.json({
+      success: true,
+      message: "User deleted successfully",
+    });
+  });
+}
+
+export const user_controller = new UserController();
+```
+
+### `src/controllers/post.controller.ts`
+
+```typescript
+import type { Context } from "hono";
+import { post_service } from "../services/post.service";
+import { async_handler } from "../utils/async_handler";
+import type { TCreatePostInput, TUpdatePostInput, TPostQueryInput } from "../validators/post.validator";
+import type { IAuthUser } from "../types";
+
+export class PostController {
+  get_all = async_handler(async (c: Context) => {
+    const query = c.req.valid("query") as TPostQueryInput;
+    const result = await post_service.get_all_posts(query);
+
+    return c.json({
+      success: true,
+      data: result.posts,
+      meta: result.meta,
+    });
+  });
+
+  get_one = async_handler(async (c: Context) => {
+    const { id } = c.req.valid("param") as { id: number };
+    const post = await post_service.get_post_by_id(id);
+
+    return c.json({
+      success: true,
+      data: post,
+    });
+  });
+
+  create = async_handler(async (c: Context) => {
+    const body = c.req.valid("json") as TCreatePostInput;
+    const user = c.get("user") as IAuthUser;
+
+    const new_post = await post_service.create_post(user.id, body);
+
+    return c.json(
+      {
+        success: true,
+        message: "Post created successfully",
+        data: new_post,
+      },
+      201
+    );
+  });
+
+  update = async_handler(async (c: Context) => {
+    const { id } = c.req.valid("param") as { id: number };
+    const body = c.req.valid("json") as TUpdatePostInput;
+    const user = c.get("user") as IAuthUser;
+
+    const updated_post = await post_service.update_post(id, user, body);
+
+    return c.json({
+      success: true,
+      message: "Post updated successfully",
+      data: updated_post,
+    });
+  });
+
+  delete = async_handler(async (c: Context) => {
+    const { id } = c.req.valid("param") as { id: number };
+    const user = c.get("user") as IAuthUser;
+
+    await post_service.delete_post(id, user);
+
+    return c.json({
+      success: true,
+      message: "Post deleted successfully",
+    });
+  });
+}
+
+export const post_controller = new PostController();
+```
+
+---
+
+## Step 12: Routes Layer (HTTP)
 
 ### `src/routes/health.routes.ts`
 
@@ -1369,7 +1574,7 @@ health_routes.get("/", (c) => {
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { register_schema, login_schema, format_zod_error } from "../validators";
-import { auth_service } from "../services/auth.service";
+import { auth_controller } from "../controllers/auth.controller";
 import { auth_middleware } from "../middlewares/auth.middleware";
 import type { THonoEnv } from "../types";
 
@@ -1389,19 +1594,7 @@ auth_routes.post(
       );
     }
   }),
-  async (c) => {
-    const body = c.req.valid("json");
-    const result = await auth_service.register(body);
-
-    return c.json(
-      {
-        success: true,
-        message: "User registered successfully",
-        data: result,
-      },
-      201
-    );
-  }
+  (c) => auth_controller.register(c)
 );
 
 auth_routes.post(
@@ -1418,27 +1611,10 @@ auth_routes.post(
       );
     }
   }),
-  async (c) => {
-    const body = c.req.valid("json");
-    const result = await auth_service.login(body);
-
-    return c.json({
-      success: true,
-      message: "Login successful",
-      data: result,
-    });
-  }
+  (c) => auth_controller.login(c)
 );
 
-auth_routes.get("/me", auth_middleware, async (c) => {
-  const user = c.get("user");
-  const profile = await auth_service.get_me(user.id);
-
-  return c.json({
-    success: true,
-    data: profile,
-  });
-});
+auth_routes.get("/me", auth_middleware, (c) => auth_controller.me(c));
 ```
 
 ### `src/routes/user.routes.ts`
@@ -1452,7 +1628,7 @@ import {
   user_query_schema,
   format_zod_error,
 } from "../validators";
-import { user_service } from "../services/user.service";
+import { user_controller } from "../controllers/user.controller";
 import { auth_middleware } from "../middlewares/auth.middleware";
 import type { THonoEnv } from "../types";
 
@@ -1472,16 +1648,7 @@ user_routes.get(
       );
     }
   }),
-  async (c) => {
-    const { page, limit } = c.req.valid("query");
-    const result = await user_service.get_all_users(page, limit);
-
-    return c.json({
-      success: true,
-      data: result.users,
-      meta: result.meta,
-    });
-  }
+  (c) => user_controller.get_all(c)
 );
 
 user_routes.get(
@@ -1498,15 +1665,7 @@ user_routes.get(
       );
     }
   }),
-  async (c) => {
-    const { id } = c.req.valid("param");
-    const user = await user_service.get_user_by_id(id);
-
-    return c.json({
-      success: true,
-      data: user,
-    });
-  }
+  (c) => user_controller.get_one(c)
 );
 
 user_routes.put(
@@ -1536,19 +1695,7 @@ user_routes.put(
       );
     }
   }),
-  async (c) => {
-    const { id } = c.req.valid("param");
-    const body = c.req.valid("json");
-    const requesting_user = c.get("user");
-
-    const updated_user = await user_service.update_user(id, body, requesting_user);
-
-    return c.json({
-      success: true,
-      message: "User updated successfully",
-      data: updated_user,
-    });
-  }
+  (c) => user_controller.update(c)
 );
 
 user_routes.delete(
@@ -1566,17 +1713,7 @@ user_routes.delete(
       );
     }
   }),
-  async (c) => {
-    const { id } = c.req.valid("param");
-    const requesting_user = c.get("user");
-
-    await user_service.delete_user(id, requesting_user);
-
-    return c.json({
-      success: true,
-      message: "User deleted successfully",
-    });
-  }
+  (c) => user_controller.delete(c)
 );
 ```
 
@@ -1592,7 +1729,7 @@ import {
   post_query_schema,
   format_zod_error,
 } from "../validators";
-import { post_service } from "../services/post.service";
+import { post_controller } from "../controllers/post.controller";
 import { auth_middleware } from "../middlewares/auth.middleware";
 import type { THonoEnv } from "../types";
 
@@ -1612,16 +1749,7 @@ post_routes.get(
       );
     }
   }),
-  async (c) => {
-    const query = c.req.valid("query");
-    const result = await post_service.get_all_posts(query);
-
-    return c.json({
-      success: true,
-      data: result.posts,
-      meta: result.meta,
-    });
-  }
+  (c) => post_controller.get_all(c)
 );
 
 post_routes.get(
@@ -1638,15 +1766,7 @@ post_routes.get(
       );
     }
   }),
-  async (c) => {
-    const { id } = c.req.valid("param");
-    const post = await post_service.get_post_by_id(id);
-
-    return c.json({
-      success: true,
-      data: post,
-    });
-  }
+  (c) => post_controller.get_one(c)
 );
 
 post_routes.post(
@@ -1664,21 +1784,7 @@ post_routes.post(
       );
     }
   }),
-  async (c) => {
-    const body = c.req.valid("json");
-    const user = c.get("user");
-
-    const new_post = await post_service.create_post(user.id, body);
-
-    return c.json(
-      {
-        success: true,
-        message: "Post created successfully",
-        data: new_post,
-      },
-      201
-    );
-  }
+  (c) => post_controller.create(c)
 );
 
 post_routes.put(
@@ -1708,19 +1814,7 @@ post_routes.put(
       );
     }
   }),
-  async (c) => {
-    const { id } = c.req.valid("param");
-    const body = c.req.valid("json");
-    const user = c.get("user");
-
-    const updated_post = await post_service.update_post(id, user, body);
-
-    return c.json({
-      success: true,
-      message: "Post updated successfully",
-      data: updated_post,
-    });
-  }
+  (c) => post_controller.update(c)
 );
 
 post_routes.delete(
@@ -1738,17 +1832,7 @@ post_routes.delete(
       );
     }
   }),
-  async (c) => {
-    const { id } = c.req.valid("param");
-    const user = c.get("user");
-
-    await post_service.delete_post(id, user);
-
-    return c.json({
-      success: true,
-      message: "Post deleted successfully",
-    });
-  }
+  (c) => post_controller.delete(c)
 );
 ```
 
@@ -1801,7 +1885,7 @@ routes.route("/api/posts", post_routes);
 
 ---
 
-## Step 11: App Factory & Server Bootstrap
+## Step 13: App Factory & Server Bootstrap
 
 ### `src/app.ts`
 
@@ -1883,7 +1967,7 @@ export default server;
 
 ---
 
-## Step 12: Automated Testing Suite
+## Step 14: Automated Testing Suite
 
 ### `tests/health.test.ts`
 
@@ -2259,7 +2343,7 @@ describe("Auth Routes HTTP Validation", () => {
 
 ---
 
-## Step 13: Migrations, Running & Testing
+## Step 15: Migrations, Running & Testing
 
 ### 1. Generate & Apply Migrations
 
@@ -2304,7 +2388,7 @@ bun run docker:run
 
 ---
 
-## Step 14: API Reference & Testing with curl
+## Step 16: API Reference & Testing with curl
 
 ### 1. Health Check
 

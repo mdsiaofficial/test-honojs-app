@@ -45,5 +45,5 @@ export const postsRelations = relations(
   )
 );
 
-export type Post = typeof posts.$inferSelect;
-export type NewPost = typeof posts.$inferInsert;
+export type TPost = typeof posts.$inferSelect;
+export type TNewPost = typeof posts.$inferInsert;

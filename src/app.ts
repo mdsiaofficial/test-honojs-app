@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import type { THonoEnv } from "./types/types";
+import type { THonoEnv } from "./types";
 import { logger } from "hono/logger";
 import { secureHeaders } from "hono/secure-headers";
 import { cors } from "hono/cors";

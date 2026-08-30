@@ -25,14 +25,16 @@ ENV PORT=5000
 COPY --from=deps /app/node_modules ./node_modules
 COPY package.json ./
 COPY src ./src
-COPY drizzle ./drizzle
 COPY drizzle.config.ts ./
 COPY tsconfig.json ./
+COPY .env.example .env
 
-USER bun
 EXPOSE 5000
+
+RUN apk add --no-cache wget && addgroup -S appgroup && adduser -S appuser -G appgroup
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:5000/health || exit 1
 
+USER appuser
 CMD ["bun", "run", "src/server.ts"]

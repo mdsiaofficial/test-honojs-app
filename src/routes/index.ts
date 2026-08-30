@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { health_routes } from "./health.routes";
-import type { THonoEnv } from "../types/types";
+import type { THonoEnv } from "../types";
 
 export const routes = new Hono<THonoEnv>();
 
