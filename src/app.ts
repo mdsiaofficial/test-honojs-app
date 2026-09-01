@@ -1,9 +1,9 @@
 import { Hono } from "hono";
-import type { THonoEnv } from "./types";
-import { logger } from "hono/logger";
 import { secureHeaders } from "hono/secure-headers";
+import { logger } from "hono/logger";
 import { cors } from "hono/cors";
 import { trimTrailingSlash } from "hono/trailing-slash";
+import type { THonoEnv } from "./types";
 import { routes } from "./routes";
 
 export function create_app(): Hono<THonoEnv> {
