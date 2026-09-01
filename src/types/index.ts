@@ -1,6 +1,6 @@
 export type TUserRole = "user" | "admin";
 
-export interface TAuthUser {
+export interface IAuthUser {
   id: number;
   email: string;
   role: TUserRole;
@@ -8,6 +8,6 @@ export interface TAuthUser {
 
 export type THonoEnv = {
   Variables: {
-    user: TAuthUser;
+    user: IAuthUser;
   };
 };

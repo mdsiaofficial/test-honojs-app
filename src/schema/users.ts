@@ -35,5 +35,5 @@ export const usersRelations = relations(users, ({ many }) => ({
 // 3. TypeScript Type Inference
 // Instead of manually typing `interface User { id: number, name: string... }`, 
 // Drizzle reads the table above and creates the exact TypeScript type for you!
-export type User = typeof users.$inferSelect; // Type for when you READ from the DB
-export type NewUser = typeof users.$inferInsert; // Type for when you INSERT into the DB
+export type TUser = typeof users.$inferSelect; // Type for when you READ from the DB
+export type TNewUser = typeof users.$inferInsert; // Type for when you INSERT into the DB
