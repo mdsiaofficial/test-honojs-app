@@ -12,14 +12,17 @@ export const posts = pgTable("posts", {
   // boolean() is true/false. .default(false) means new posts are drafts by default
   published: boolean("published").default(false).notNull(),
 
-  // 🔥 THIS IS THE CRITICAL LINK 🔥
+  // THIS IS THE CRITICAL LINK
   // This is a "Foreign Key". It stores the ID of the user who wrote the post.
   author_id: integer("author_id")
     // .references() physically links this column to the users table
-    .references(() => users.id, {
-      // onDelete: "cascade" means: "If the User is deleted, automatically delete all their posts too"
-      onDelete: "cascade"
-    })
+    .references(
+      () => users.id,
+      {
+        // onDelete: "cascade" means: "If the User is deleted, automatically delete all their posts too"
+        onDelete: "cascade"
+      }
+    )
     .notNull(), // A post MUST have an author
 
   created_at: timestamp("created_at").defaultNow().notNull(),

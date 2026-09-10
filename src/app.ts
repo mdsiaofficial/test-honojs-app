@@ -38,3 +38,4 @@ export function create_app(): Hono<THonoEnv> {
 }
 
 export const app = create_app();
+export default app;

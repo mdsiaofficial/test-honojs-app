@@ -26,7 +26,8 @@ export const users = pgTable("users", {
 });
 
 // 2. Define the Relationships (The "Magic" of Drizzle)
-export const usersRelations = relations(users, ({ many }) => ({
+export const usersRelations = relations(
+  users, ({ many }) => ({
   // This tells Drizzle: "One user can have MANY posts"
   // This doesn't change the database, it just teaches TypeScript/Drizzle how they connect
   posts: many(posts), 
