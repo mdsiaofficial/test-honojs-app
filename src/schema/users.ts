@@ -1,4 +1,4 @@
-import { pgTable, serial, timestamp, varchar } from "drizzle-orm/pg-core";
+import { integer, pgTable, serial, text, timestamp, varchar } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { posts } from "./posts"; 
 // We import 'posts' here so we can define the relationship below
@@ -19,7 +19,10 @@ export const users = pgTable("users", {
   
   // .default("user") means if you don't specify a role, it defaults to "user"
   role: varchar("role", { length: 20 }).default("user").notNull(), 
-  
+  // ★ NEW FIELD — added right here
+  avatar_url: text("avatar_url"),
+  balance: integer("balance").default(0), 
+
   // timestamp() with .defaultNow() automatically saves the exact time the row is created
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
